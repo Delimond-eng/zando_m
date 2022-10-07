@@ -5,10 +5,18 @@ import 'package:google_fonts/google_fonts.dart';
 class SearchInput extends StatelessWidget {
   final double spacedLeft;
   final String hintText;
+  final Function(String value) onChanged;
+  final Function(String value) onSubmitted;
+  final TextEditingController controller;
+  final bool hasSubmitted;
   const SearchInput({
     Key key,
     this.spacedLeft,
     this.hintText,
+    this.onChanged,
+    this.onSubmitted,
+    this.controller,
+    this.hasSubmitted = false,
   }) : super(key: key);
 
   @override
@@ -40,6 +48,7 @@ class SearchInput extends StatelessWidget {
                   fontSize: 15.0,
                   fontWeight: FontWeight.w800,
                 ),
+                onChanged: onChanged,
                 decoration: InputDecoration(
                   contentPadding:
                       const EdgeInsets.only(bottom: 12.0, left: 10.0),
@@ -53,22 +62,24 @@ class SearchInput extends StatelessWidget {
                 ),
               ),
             ),
-            TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.blue,
-                elevation: 2,
-                padding: const EdgeInsets.all(10.0),
-              ),
-              child: Text(
-                "Rechercher",
-                style: GoogleFonts.didactGothic(
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                  fontSize: 12.0,
+            if (hasSubmitted) ...[
+              TextButton(
+                style: TextButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  elevation: 2,
+                  padding: const EdgeInsets.all(10.0),
                 ),
+                child: Text(
+                  "Rechercher",
+                  style: GoogleFonts.didactGothic(
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                    fontSize: 12.0,
+                  ),
+                ),
+                onPressed: () => onSubmitted(controller.text),
               ),
-              onPressed: () {},
-            ),
+            ],
           ],
         ),
       ),

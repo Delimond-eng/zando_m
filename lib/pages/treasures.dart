@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -5,7 +6,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
 import 'package:zando_m/services/db_helper.dart';
 
+import '../models/compte.dart';
 import '../responsive/base_widget.dart';
+import '../services/native_db_helper.dart';
 import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
 import '../widgets/search_input.dart';
@@ -77,37 +80,50 @@ class _TreasuresState extends State<Treasures> {
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10.0,
-                    vertical: 8.0,
-                  ),
-                  child: Row(
-                    children: const [
-                      Flexible(
-                        child: SearchInput(
-                          spacedLeft: 0,
-                          hintText: "Recherche compte...",
+                FadeInUp(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10.0,
+                      vertical: 8.0,
+                    ),
+                    child: Row(
+                      children: [
+                        Flexible(
+                          child: SearchInput(
+                            spacedLeft: 0,
+                            hintText: "Recherche compte...",
+                            onChanged: (value) async {
+                              var json = await NativeDbHelper.rawQuery(
+                                  "SELECT * FROM comptes WHERE NOT compte_state='deleted' AND compte_libelle LIKE '%$value%'");
+                              dataController.allComptes.clear();
+                              json.forEach((e) {
+                                dataController.allComptes
+                                    .add(Compte.fromMap(e));
+                              });
+                            },
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
                 Expanded(
                   child: Obx(
-                    () => ListView(
-                      padding: const EdgeInsets.all(10.0),
-                      children: [
-                        CostumTable(
-                          cols: const [
-                            "Date création",
-                            "Libellé",
-                            "Status",
-                            ""
-                          ],
-                          data: _createRows(),
-                        ),
-                      ],
+                    () => FadeInUp(
+                      child: ListView(
+                        padding: const EdgeInsets.all(10.0),
+                        children: [
+                          CostumTable(
+                            cols: const [
+                              "Date création",
+                              "Libellé",
+                              "Status",
+                              ""
+                            ],
+                            data: _createRows(),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 )
@@ -164,6 +180,25 @@ class _TreasuresState extends State<Treasures> {
               DataCell(
                 Row(
                   children: [
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        elevation: 2,
+                        padding: const EdgeInsets.all(8.0),
+                      ),
+                      child: Text(
+                        "Voir détails",
+                        style: GoogleFonts.didactGothic(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 12.0,
+                        ),
+                      ),
+                      onPressed: () async {},
+                    ),
+                    const SizedBox(
+                      width: 5.0,
+                    ),
                     TextButton(
                       style: TextButton.styleFrom(
                         backgroundColor: compte.compteStatus == "actif"

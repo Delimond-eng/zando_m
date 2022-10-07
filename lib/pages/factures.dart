@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -16,9 +17,6 @@ class Factures extends StatefulWidget {
 }
 
 class _FacturesState extends State<Factures> {
-  final ScrollController hScrollController = ScrollController();
-  final ScrollController vScrollController = ScrollController();
-
   final List<Map> _filters = [
     {"keyw": "all", "title": "Toutes les factures"},
     {"keyw": "pending", "title": "Factures en cours"},
@@ -65,67 +63,71 @@ class _FacturesState extends State<Factures> {
 
   Widget _dataTableViewer(BuildContext context) {
     return Expanded(
-      child: ListView(
-        padding: const EdgeInsets.all(10.0),
-        children: [
-          CostumTable(
-            cols: const [
-              "N° Fac.",
-              "Date",
-              "Montant",
-              "Paiement",
-              "Reste",
-              "Mode",
-              "Status",
-              "Client",
-              ""
-            ],
-            data: _createRows(),
-          ),
-        ],
+      child: FadeInUp(
+        child: ListView(
+          padding: const EdgeInsets.all(10.0),
+          children: [
+            CostumTable(
+              cols: const [
+                "N° Fac.",
+                "Date",
+                "Montant",
+                "Paiement",
+                "Reste",
+                "Mode",
+                "Status",
+                "Client",
+                ""
+              ],
+              data: _createRows(),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _topFilters(BuildContext context) {
     var _selectedFilterKeyword = "all";
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10.0,
-        vertical: 8.0,
-      ),
-      child: StatefulBuilder(builder: (context, setter) {
-        return Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                ..._filters.map((e) {
-                  return FilterBtn(
-                    isSelected: e['keyw'] == _selectedFilterKeyword,
-                    title: e['title'],
-                    margin: 10.0,
-                    icon: Icons.filter_list_rounded,
-                    onPressed: () {
-                      setter(() {
-                        _selectedFilterKeyword = e['keyw'];
-                      });
-                    },
-                  );
-                })
-              ],
-            ),
-            const SizedBox(
-              width: 10.0,
-            ),
-            const Flexible(
-              child: SearchInput(
-                spacedLeft: 0,
+    return FadeInUp(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 10.0,
+          vertical: 8.0,
+        ),
+        child: StatefulBuilder(builder: (context, setter) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  ..._filters.map((e) {
+                    return FilterBtn(
+                      isSelected: e['keyw'] == _selectedFilterKeyword,
+                      title: e['title'],
+                      margin: 10.0,
+                      icon: Icons.filter_list_rounded,
+                      onPressed: () {
+                        setter(() {
+                          _selectedFilterKeyword = e['keyw'];
+                        });
+                      },
+                    );
+                  })
+                ],
               ),
-            ),
-          ],
-        );
-      }),
+              const SizedBox(
+                width: 10.0,
+              ),
+              const Flexible(
+                child: SearchInput(
+                  spacedLeft: 0,
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
     );
   }
 
@@ -237,9 +239,7 @@ class _FacturesState extends State<Factures> {
                         fontSize: 12.0,
                       ),
                     ),
-                    onPressed: () {
-                      factureDetailsModal(context);
-                    },
+                    onPressed: () {},
                   ),
                   const SizedBox(
                     width: 5.0,

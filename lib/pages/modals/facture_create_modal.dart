@@ -2,28 +2,25 @@ import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:printing/printing.dart';
 import 'package:zando_m/global/utils.dart';
 import 'package:zando_m/models/facture_detail.dart';
 import 'package:zando_m/pages/modals/costumer_create_modal.dart';
 import 'package:zando_m/services/db_helper.dart';
 import 'package:zando_m/services/native_db_helper.dart';
+import 'package:zando_m/widgets/costum_checkbox.dart';
 import 'package:zando_m/widgets/simple_field_text.dart';
-import 'package:pdf/pdf.dart';
 
 import '../../components/topbar.dart';
 import '../../global/controllers.dart';
 import '../../models/client.dart';
 import '../../models/facture.dart';
-import '../../services/db_manager.dart';
-import '../../services/print_service.dart';
 import '../../utilities/modals.dart';
 import '../../widgets/costum_table.dart';
 import '../../widgets/round_icon_btn.dart';
 import '../../widgets/tot_info_view.dart';
+import 'print_modal.dart';
 
 createFactureModal(BuildContext context,
     {bool showClientList = true, Client client}) async {
@@ -39,6 +36,8 @@ createFactureModal(BuildContext context,
 
   //items list
   List<FactureDetail> items = <FactureDetail>[];
+
+  bool showPrint = false;
 
   showDialog(
     barrierColor: Colors.black12,
@@ -330,101 +329,142 @@ createFactureModal(BuildContext context,
                               Padding(
                                 padding: const EdgeInsets.all(20.0),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    ElevatedButton(
-                                      onPressed: () async {
-                                        Get.back();
+                                    CostumCheckBox(
+                                      checked: showPrint,
+                                      title:
+                                          "Sélectionnez pour voir la page d'impression après la création !",
+                                      onChanged: (value) {
+                                        showPrint = value;
                                       },
-                                      style: ElevatedButton.styleFrom(
-                                        padding: const EdgeInsets.all(20.0),
-                                        backgroundColor: Colors.grey[800],
-                                      ),
-                                      child: Text(
-                                        "Annuler",
-                                        style: GoogleFonts.didactGothic(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
                                     ),
-                                    const SizedBox(
-                                      width: 10.0,
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () async {
-                                        if (selectedClient == null) {
-                                          XDialog.showMessage(
-                                            context,
-                                            message:
-                                                "Veuillez sélectionner un client propriétaire de la facture !",
-                                            type: "warning",
-                                          );
-                                          return;
-                                        }
-                                        var db = await DbHelper.initDb();
-                                        //calculate facture amount //
-                                        double total = 0.0;
-                                        double currentTot = 0.0;
-                                        items.forEach((e) {
-                                          if (e.factureDetailDevise == "CDF") {
-                                            currentTot =
-                                                convertCdfToDollars(e.total);
-                                          } else {
-                                            currentTot = e.total;
-                                          }
-                                          total += currentTot;
-                                        });
-                                        // end //
-
-                                        //create facture statment. //
-                                        var facture = Facture(
-                                          factureClientId:
-                                              selectedClient.clientId,
-                                          factureDevise: "USD",
-                                          factureMontant: total.toString(),
-                                        );
-                                        Xloading.showLottieLoading(context);
-                                        await db
-                                            .insert(
-                                          "factures",
-                                          facture.toMap(),
-                                        )
-                                            .then(
-                                          (factureId) async {
-                                            for (var item in items) {
-                                              item.factureId = factureId;
-                                              await db.insert(
-                                                "facture_details",
-                                                item.toMap(),
-                                              );
-                                            }
-                                            Xloading.dismiss();
-                                            Future.delayed(
-                                                const Duration(
-                                                    milliseconds: 500), () {
-                                              Get.back();
-                                              showPrintViewer(
-                                                context,
-                                                factureId: factureId,
-                                              );
-                                            });
+                                    Row(
+                                      children: [
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            Get.back();
                                           },
-                                        );
-
-                                        // end //
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        padding: const EdgeInsets.all(20.0),
-                                        backgroundColor: Colors.green,
-                                      ),
-                                      child: Text(
-                                        "Créer & imprimer",
-                                        style: GoogleFonts.didactGothic(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w600,
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.all(20.0),
+                                            backgroundColor: Colors.grey[800],
+                                          ),
+                                          child: Text(
+                                            "Annuler",
+                                            style: GoogleFonts.didactGothic(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
                                         ),
-                                      ),
+                                        const SizedBox(
+                                          width: 10.0,
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () async {
+                                            if (selectedClient == null) {
+                                              XDialog.showMessage(
+                                                context,
+                                                message:
+                                                    "Veuillez sélectionner un client propriétaire de la facture !",
+                                                type: "warning",
+                                              );
+                                              return;
+                                            }
+                                            if (items.isEmpty) {
+                                              XDialog.showMessage(
+                                                context,
+                                                message:
+                                                    "Veuillez créer des items pour la facture avant d'effectuer cette action !",
+                                                type: "warning",
+                                              );
+                                              return;
+                                            }
+                                            var db = await DbHelper.initDb();
+                                            //calculate facture amount //
+                                            double total = 0.0;
+                                            double currentTot = 0.0;
+                                            items.forEach((e) {
+                                              if (e.factureDetailDevise ==
+                                                  "CDF") {
+                                                currentTot =
+                                                    convertCdfToDollars(
+                                                        e.total);
+                                              } else {
+                                                currentTot = e.total;
+                                              }
+                                              total += currentTot;
+                                            });
+                                            // end //
+
+                                            //create facture statment. //
+                                            var facture = Facture(
+                                              factureClientId:
+                                                  selectedClient.clientId,
+                                              factureDevise: "USD",
+                                              factureMontant: total.toString(),
+                                            );
+                                            Xloading.showLottieLoading(context);
+                                            await db
+                                                .insert(
+                                              "factures",
+                                              facture.toMap(),
+                                            )
+                                                .then(
+                                              (factureId) async {
+                                                for (var item in items) {
+                                                  item.factureId = factureId;
+                                                  await db.insert(
+                                                    "facture_details",
+                                                    item.toMap(),
+                                                  );
+                                                }
+                                                dataController
+                                                    .loadFacturesEnAttente();
+                                                dataController
+                                                    .refreshDashboardCounts();
+                                                Xloading.dismiss();
+                                                if (showPrint) {
+                                                  Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500),
+                                                      () {
+                                                    showPrintViewer(
+                                                      context,
+                                                      factureId: factureId,
+                                                    );
+                                                    navigatorController
+                                                        .navigateTo("/");
+                                                  });
+                                                } else {
+                                                  Future.delayed(
+                                                      const Duration(
+                                                          milliseconds: 500),
+                                                      () {
+                                                    Get.back();
+                                                    navigatorController
+                                                        .navigateTo("/");
+                                                  });
+                                                }
+                                              },
+                                            );
+
+                                            // end //
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            padding: const EdgeInsets.all(20.0),
+                                            backgroundColor: Colors.green,
+                                          ),
+                                          child: Text(
+                                            "Créer facture",
+                                            style: GoogleFonts.didactGothic(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
@@ -656,88 +696,5 @@ class FactureCostumerCard extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-showPrintViewer(BuildContext context, {factureId}) async {
-  var invoice = await DataManager.getFactureInvoice(factureId: factureId);
-  if (invoice != null) {
-    PdfPageFormat pageFormat = PdfPageFormat.standard;
-    PrintingBuilder printPdf = PrintingBuilder(invoice: invoice);
-    var bytesPdf = await printPdf.buildPdf(pageFormat);
-
-    showDialog(
-        barrierColor: Colors.black12,
-        context: context,
-        builder: (BuildContext context) {
-          return FadeIn(
-            child: Dialog(
-              insetPadding: const EdgeInsets.all(80.0),
-              backgroundColor: Colors.white,
-              elevation: 2.0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(5),
-              ),
-              child: SizedBox(
-                height: MediaQuery.of(context).size.height,
-                width: MediaQuery.of(context).size.width,
-                child: Column(
-                  children: [
-                    Container(
-                      color: Colors.grey,
-                      height: 60.0,
-                      width: double.infinity,
-                      child: Padding(
-                        padding: const EdgeInsets.all(10.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              "Impression de la facture",
-                              style: GoogleFonts.didactGothic(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
-                            RoundedIconBtn(
-                              size: 30.0,
-                              iconColor: Colors.pink,
-                              color: Colors.white,
-                              icon: CupertinoIcons.clear,
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: Builder(builder: (context) {
-                        return PdfPreview(
-                          maxPageWidth: 800,
-                          build: (format) => bytesPdf,
-                          pdfPreviewPageDecoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(.2),
-                                blurRadius: 8,
-                                offset: const Offset(0, 3),
-                              )
-                            ],
-                          ),
-                          canChangePageFormat: true,
-                          allowPrinting: true,
-                        );
-                      }),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        });
   }
 }

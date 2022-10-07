@@ -50,7 +50,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                       DeviceScreenType.Desktop
                                   ? Colors.white
                                   : Colors.white,
-                              secondaryColor: Colors.grey,
+                              secondaryColor: Colors.orange[200],
                               size: 25.0,
                             ),
                           ),

@@ -11,8 +11,7 @@ sellingInfoModal(BuildContext context) {
     barrierColor: Colors.black12,
     context: context,
     builder: (BuildContext context) {
-      return ZoomIn(
-        duration: const Duration(milliseconds: 200),
+      return FadeInLeft(
         child: Dialog(
           insetPadding: const EdgeInsets.all(20.0),
           backgroundColor: Colors.transparent,

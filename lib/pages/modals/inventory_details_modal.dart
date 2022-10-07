@@ -6,7 +6,6 @@ import 'package:google_fonts/google_fonts.dart';
 import '../../components/topbar.dart';
 import '../../widgets/costum_table.dart';
 import '../../widgets/round_icon_btn.dart';
-import 'facture_details_modal.dart';
 
 inventoryDetailsModal(BuildContext context) {
   showDialog(
@@ -241,7 +240,7 @@ List<DataRow> _createRows(BuildContext context) {
                       ),
                     ),
                     onPressed: () {
-                      factureDetailsModal(context);
+                      //factureDetailsModal(context);
                     },
                   ),
                 ],

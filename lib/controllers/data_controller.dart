@@ -1,10 +1,12 @@
 import 'package:get/get.dart';
+import 'package:zando_m/reports/report.dart';
 
 import '../models/client.dart';
 import '../models/compte.dart';
 import '../models/currency.dart';
 import '../models/facture.dart';
 import '../models/user.dart';
+import '../reports/models/dashboard_count.dart';
 import '../services/db_helper.dart';
 import '../services/native_db_helper.dart';
 import '../services/synchonisation.dart';
@@ -18,6 +20,7 @@ class DataController extends GetxController {
   var comptes = <Compte>[].obs;
   var allComptes = <Compte>[].obs;
   var currency = Currency().obs;
+  var dashboardCounts = <DashboardCount>[].obs;
 
   @override
   void onInit() {
@@ -42,6 +45,12 @@ class DataController extends GetxController {
     }
   }
 
+  refreshDashboardCounts() async {
+    var counts = await Report.getCount();
+    dashboardCounts.clear();
+    dashboardCounts.addAll(counts);
+  }
+
   refreshCurrency() async {
     var db = await DbHelper.initDb();
     var taux = await db.query("currencies");
@@ -53,7 +62,7 @@ class DataController extends GetxController {
   loadFacturesEnAttente() async {
     try {
       var allFactures = await NativeDbHelper.rawQuery(
-          "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut = 'en cours' AND NOT factures.facture_state='deleted' ORDER BY facture_client_id DESC");
+          "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut = 'en cours' AND NOT factures.facture_state='deleted' ORDER BY facture_id DESC");
       if (allFactures != null) {
         factures.clear();
         allFactures.forEach((e) {

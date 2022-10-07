@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -93,81 +94,84 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          const AppLogo(),
+                          FadeInDown(child: const AppLogo()),
                           const SizedBox(
                             height: 20.0,
                           ),
-                          Container(
-                            margin: EdgeInsets.symmetric(
-                                horizontal: screenSize.deviceScreenType ==
-                                        DeviceScreenType.Mobile
-                                    ? 10.0
-                                    : 0.0),
-                            padding: const EdgeInsets.all(15.0),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(5.0),
-                              color: Colors.white.withOpacity(.8),
-                              boxShadow: [
-                                BoxShadow(
-                                  blurRadius: 8,
-                                  color: Colors.grey.withOpacity(.2),
-                                  offset: const Offset(0, 3),
-                                )
-                              ],
-                            ),
-                            height: 200.0,
-                            width: 420.0,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Flexible(
-                                  child: AuthField(
-                                    hintText: "Entrez le nom d'utilisateur...",
-                                    icon: CupertinoIcons.person,
-                                    controller: _textUsername,
+                          ZoomIn(
+                            child: Container(
+                              margin: EdgeInsets.symmetric(
+                                  horizontal: screenSize.deviceScreenType ==
+                                          DeviceScreenType.Mobile
+                                      ? 10.0
+                                      : 0.0),
+                              padding: const EdgeInsets.all(15.0),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(5.0),
+                                color: Colors.white.withOpacity(.8),
+                                boxShadow: [
+                                  BoxShadow(
+                                    blurRadius: 8,
+                                    color: Colors.grey.withOpacity(.2),
+                                    offset: const Offset(0, 3),
+                                  )
+                                ],
+                              ),
+                              height: 200.0,
+                              width: 420.0,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  Flexible(
+                                    child: AuthField(
+                                      hintText:
+                                          "Entrez le nom d'utilisateur...",
+                                      icon: CupertinoIcons.person,
+                                      controller: _textUsername,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(
-                                  height: 15.0,
-                                ),
-                                Flexible(
-                                  child: AuthField(
-                                    hintText: "Entrez le mot de passe...",
-                                    icon: CupertinoIcons.lock,
-                                    isPassWord: true,
-                                    controller: _textPassword,
+                                  const SizedBox(
+                                    height: 15.0,
                                   ),
-                                ),
-                                const SizedBox(
-                                  height: 15.0,
-                                ),
-                                Flexible(
-                                  child: SizedBox(
-                                    height: 50.0,
-                                    width: double.infinity,
-                                    child: ElevatedButton.icon(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.pink,
-                                      ),
-                                      onPressed: () => loggedIn(context),
-                                      icon: const Icon(
-                                        Icons.lock_open_rounded,
-                                        size: 15.0,
-                                      ),
-                                      label: Text(
-                                        "Connecter".toUpperCase(),
-                                        style: GoogleFonts.didactGothic(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                          letterSpacing: 2.0,
+                                  Flexible(
+                                    child: AuthField(
+                                      hintText: "Entrez le mot de passe...",
+                                      icon: CupertinoIcons.lock,
+                                      isPassWord: true,
+                                      controller: _textPassword,
+                                    ),
+                                  ),
+                                  const SizedBox(
+                                    height: 15.0,
+                                  ),
+                                  Flexible(
+                                    child: SizedBox(
+                                      height: 50.0,
+                                      width: double.infinity,
+                                      child: ElevatedButton.icon(
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.pink,
+                                        ),
+                                        onPressed: () => loggedIn(context),
+                                        icon: const Icon(
+                                          Icons.lock_open_rounded,
+                                          size: 15.0,
+                                        ),
+                                        label: Text(
+                                          "Connecter".toUpperCase(),
+                                          style: GoogleFonts.didactGothic(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.w700,
+                                            letterSpacing: 2.0,
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           )
                         ],

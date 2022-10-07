@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -91,16 +92,18 @@ class _UsersState extends State<Users> {
 
   Widget _dataTableViewer(BuildContext context) {
     return Expanded(
-      child: ListView(
-        padding: const EdgeInsets.all(10.0),
-        children: [
-          Obx(
-            () => CostumTable(
-              cols: const ["N°", "Nom", "Rôle", "Status", ""],
-              data: _createRows(),
+      child: FadeInUp(
+        child: ListView(
+          padding: const EdgeInsets.all(10.0),
+          children: [
+            Obx(
+              () => CostumTable(
+                cols: const ["N°", "Nom", "Rôle", "Status", ""],
+                data: _createRows(),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

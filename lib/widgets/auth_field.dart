@@ -43,13 +43,17 @@ class _AuthFieldState extends State<AuthField> {
               Flexible(
                 child: TextField(
                   controller: widget.controller,
-                  style: GoogleFonts.didactGothic(fontSize: 15.0),
+                  style: GoogleFonts.didactGothic(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.w800,
+                  ),
                   decoration: InputDecoration(
                     contentPadding: const EdgeInsets.all(8.0),
                     hintText: widget.hintText,
                     hintStyle: GoogleFonts.didactGothic(
                       color: Colors.grey[600],
                       fontWeight: FontWeight.w400,
+                      fontSize: 15.0,
                     ),
                     border: InputBorder.none,
                     counterText: '',
@@ -62,7 +66,7 @@ class _AuthFieldState extends State<AuthField> {
                   controller: widget.controller,
                   obscureText: _isObscure,
                   style: GoogleFonts.didactGothic(
-                    fontSize: 15.0,
+                    fontSize: 16.0,
                     fontWeight: FontWeight.w900,
                   ),
                   decoration: InputDecoration(

@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -113,64 +114,66 @@ class Sidebar extends StatelessWidget {
                   ],
                 ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Column(
-                  children: [
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20.0,
-                            vertical: 30.0,
+              FadeInDown(
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    children: [
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0,
+                              vertical: 30.0,
+                            ),
+                            backgroundColor: Colors.indigo,
                           ),
-                          backgroundColor: Colors.indigo,
-                        ),
-                        onPressed: () {
-                          createCostumerModal(context);
-                        },
-                        label: Text(
-                          "Nouveau client",
-                          style: GoogleFonts.didactGothic(
-                            fontWeight: FontWeight.w800,
+                          onPressed: () {
+                            createCostumerModal(context);
+                          },
+                          label: Text(
+                            "Nouveau client",
+                            style: GoogleFonts.didactGothic(
+                              fontWeight: FontWeight.w800,
+                            ),
                           ),
-                        ),
-                        icon: const Icon(
-                          Icons.person_add_alt,
-                          size: 15.0,
+                          icon: const Icon(
+                            Icons.person_add_alt,
+                            size: 15.0,
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(
-                      height: 10.0,
-                    ),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 20.0,
-                            vertical: 30.0,
-                          ),
-                          backgroundColor: Colors.blue,
-                        ),
-                        onPressed: () {
-                          createFactureModal(context);
-                        },
-                        label: Text(
-                          "Nouvelle facture",
-                          style: GoogleFonts.didactGothic(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        icon: const Icon(
-                          Icons.add,
-                          size: 15.0,
-                        ),
+                      const SizedBox(
+                        height: 10.0,
                       ),
-                    )
-                  ],
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20.0,
+                              vertical: 30.0,
+                            ),
+                            backgroundColor: Colors.blue,
+                          ),
+                          onPressed: () {
+                            createFactureModal(context);
+                          },
+                          label: Text(
+                            "Nouvelle facture",
+                            style: GoogleFonts.didactGothic(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          icon: const Icon(
+                            Icons.add,
+                            size: 15.0,
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
                 ),
               )
             ],

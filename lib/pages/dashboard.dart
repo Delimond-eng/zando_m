@@ -1,15 +1,21 @@
-import 'package:flutter/cupertino.dart';
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
+import 'package:zando_m/models/facture.dart';
 import 'package:zando_m/pages/components/edit_currency_drawer.dart';
+import 'package:zando_m/pages/modals/payModal.dart';
 import 'package:zando_m/pages/modals/selling_info_modal.dart';
+import 'package:zando_m/services/db_helper.dart';
+import 'package:zando_m/utilities/modals.dart';
 import 'package:zando_m/widgets/costum_table.dart';
 import 'package:zando_m/widgets/dash_card.dart';
 
+import '../services/native_db_helper.dart';
 import '../widgets/custom_page.dart';
 import '../widgets/search_input.dart';
+import 'modals/facture_details_modal.dart';
 
 class DashBoard extends StatefulWidget {
   const DashBoard({Key key}) : super(key: key);
@@ -24,6 +30,7 @@ class _DashBoardState extends State<DashBoard> {
   void initState() {
     super.initState();
     dataController.loadFacturesEnAttente();
+    dataController.refreshDashboardCounts();
   }
 
   @override
@@ -44,46 +51,29 @@ class _DashBoardState extends State<DashBoard> {
                   height: 10.0,
                 ),
                 _currencyContent(context),
-                Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        "Liste des facture en cours",
-                        style: GoogleFonts.didactGothic(
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      const Flexible(
-                        child: SearchInput(
-                          hintText: "Recherche facture par nom du client ...",
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                _searchPart(),
                 Expanded(
                   child: Obx(() {
-                    return ListView(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10.0,
-                        vertical: 5.0,
-                      ),
-                      children: [
-                        CostumTable(
-                          cols: const [
-                            "N° Fac.",
-                            "Date",
-                            "Montant",
-                            "Status",
-                            "Client",
-                            ""
-                          ],
-                          data: _createRows(),
+                    return FadeInUpBig(
+                      child: ListView(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10.0,
+                          vertical: 5.0,
                         ),
-                      ],
+                        children: [
+                          CostumTable(
+                            cols: const [
+                              "N° Fac.",
+                              "Date",
+                              "Montant",
+                              "Status",
+                              "Client",
+                              ""
+                            ],
+                            data: _createRows(),
+                          ),
+                        ],
+                      ),
                     );
                   }),
                 )
@@ -95,139 +85,85 @@ class _DashBoardState extends State<DashBoard> {
     );
   }
 
+  Widget _searchPart() {
+    return FadeInUp(
+      child: Padding(
+        padding: const EdgeInsets.all(10.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              "Liste des facture en cours",
+              style: GoogleFonts.didactGothic(
+                fontSize: 18.0,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            Flexible(
+              child: SearchInput(
+                hintText: "Recherche facture par nom du client ...",
+                onChanged: (value) async {
+                  var json = await NativeDbHelper.rawQuery(
+                      "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut = 'en cours' AND NOT factures.facture_state='deleted' AND clients.client_nom LIKE '%$value%'");
+                  dataController.factures.clear();
+                  json.forEach((e) {
+                    dataController.factures.add(Facture.fromMap(e));
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _currencyContent(BuildContext context) {
-    return Row(
-      children: [
-        Flexible(
-          child: Container(
-            margin: const EdgeInsets.symmetric(
-              horizontal: 10.0,
-              vertical: 5.0,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(4.0),
-              border: Border.all(color: Colors.blue, width: .3),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(.1),
-                  blurRadius: 5.0,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            width: double.infinity,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
+    return FadeInUp(
+      child: Row(
+        children: [
+          Flexible(
+            child: Container(
+              margin: const EdgeInsets.symmetric(
                 horizontal: 10.0,
                 vertical: 5.0,
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Ventes journalières",
-                        style: GoogleFonts.didactGothic(
-                          color: Colors.grey[800],
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      RichText(
-                        text: TextSpan(
-                          children: [
-                            TextSpan(
-                              text: "150",
-                              style: GoogleFonts.staatliches(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 25.0,
-                              ),
-                            ),
-                            TextSpan(
-                              text: " USD",
-                              style: GoogleFonts.didactGothic(
-                                color: Colors.blue,
-                                fontSize: 15.0,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            )
-                          ],
-                        ),
-                      )
-                    ],
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4.0),
+                border: Border.all(color: Colors.blue, width: .3),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(.1),
+                    blurRadius: 5.0,
+                    offset: const Offset(0, 2),
                   ),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      padding: const EdgeInsets.all(20.0),
-                    ),
-                    onPressed: () {
-                      sellingInfoModal(context);
-                    },
-                    label: Text(
-                      "Voir détails",
-                      style: GoogleFonts.didactGothic(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    icon: const Icon(
-                      Icons.remove_red_eye,
-                      size: 15.0,
-                    ),
-                  )
                 ],
               ),
-            ),
-          ),
-        ),
-        Flexible(
-          child: Container(
-            margin: const EdgeInsets.symmetric(
-              horizontal: 10.0,
-              vertical: 5.0,
-            ),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(4.0),
-              border: Border.all(color: Colors.pink, width: .3),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(.1),
-                  blurRadius: 5.0,
-                  offset: const Offset(0, 2),
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 5.0,
                 ),
-              ],
-            ),
-            width: double.infinity,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 10.0,
-                vertical: 5.0,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Taux du jour",
-                        style: GoogleFonts.didactGothic(
-                          color: Colors.grey[800],
-                          fontWeight: FontWeight.w600,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Ventes journalières",
+                          style: GoogleFonts.didactGothic(
+                            color: Colors.grey[800],
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
-                      ),
-                      Obx(
-                        () => RichText(
+                        RichText(
                           text: TextSpan(
                             children: [
                               TextSpan(
-                                text:
-                                    dataController.currency.value.currencyValue,
+                                text: "150",
                                 style: GoogleFonts.staatliches(
                                   color: Colors.black,
                                   fontWeight: FontWeight.w800,
@@ -235,87 +171,162 @@ class _DashBoardState extends State<DashBoard> {
                                 ),
                               ),
                               TextSpan(
-                                text: " CDF",
+                                text: " USD",
                                 style: GoogleFonts.didactGothic(
-                                  color: Colors.pink,
+                                  color: Colors.blue,
                                   fontSize: 15.0,
                                   fontWeight: FontWeight.w600,
                                 ),
                               )
                             ],
                           ),
-                        ),
-                      )
-                    ],
-                  ),
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.pink,
-                      padding: const EdgeInsets.all(20.0),
+                        )
+                      ],
                     ),
-                    onPressed: () async {
-                      await dataController.editCurrency(value: '2100');
-                      //_scaffoldKey.currentState.openEndDrawer();
-                    },
-                    label: Text(
-                      "Mettre à jour",
-                      style: GoogleFonts.didactGothic(
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.all(20.0),
                       ),
-                    ),
-                    icon: const Icon(
-                      Icons.edit,
-                      size: 15.0,
-                    ),
-                  )
-                ],
+                      onPressed: () {
+                        sellingInfoModal(context);
+                      },
+                      label: Text(
+                        "Voir détails",
+                        style: GoogleFonts.didactGothic(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.remove_red_eye,
+                        size: 15.0,
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ],
+          Flexible(
+            child: Container(
+              margin: const EdgeInsets.symmetric(
+                horizontal: 10.0,
+                vertical: 5.0,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4.0),
+                border: Border.all(color: Colors.pink, width: .3),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(.1),
+                    blurRadius: 5.0,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              width: double.infinity,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10.0,
+                  vertical: 5.0,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Taux du jour",
+                          style: GoogleFonts.didactGothic(
+                            color: Colors.grey[800],
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        Obx(
+                          () => RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: dataController
+                                      .currency.value.currencyValue,
+                                  style: GoogleFonts.staatliches(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 25.0,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: " CDF",
+                                  style: GoogleFonts.didactGothic(
+                                    color: Colors.pink,
+                                    fontSize: 15.0,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+                        )
+                      ],
+                    ),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.pink,
+                        padding: const EdgeInsets.all(20.0),
+                      ),
+                      onPressed: () async {
+                        _scaffoldKey.currentState.openEndDrawer();
+                      },
+                      label: Text(
+                        "Mettre à jour",
+                        style: GoogleFonts.didactGothic(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      icon: const Icon(
+                        Icons.edit,
+                        size: 15.0,
+                      ),
+                    )
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   Widget _dashContent(BuildContext context) {
-    return GridView(
-      shrinkWrap: true,
-      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        childAspectRatio: 2.5,
-        crossAxisCount: 4,
-        crossAxisSpacing: 10.0,
-        mainAxisSpacing: 10.0,
-      ),
-      children: const [
-        DashCard(
-          icon: CupertinoIcons.doc_circle_fill,
-          title: "Factures en cours",
-          value: "240",
-          color: Colors.brown,
+    return Obx(() {
+      return FadeInUp(
+        child: GridView.builder(
+          shrinkWrap: true,
+          padding: const EdgeInsets.symmetric(horizontal: 10.0),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            childAspectRatio: 2.5,
+            crossAxisCount: 4,
+            crossAxisSpacing: 10.0,
+            mainAxisSpacing: 10.0,
+          ),
+          itemCount: dataController.dashboardCounts.length,
+          itemBuilder: ((context, index) {
+            var count = dataController.dashboardCounts[index];
+            return DashCard(
+              icon: count.icon,
+              title: count.title,
+              value: count.countValue.toString(),
+              color: count.color,
+            );
+          }),
         ),
-        DashCard(
-          icon: CupertinoIcons.doc_checkmark_fill,
-          title: "Factures reglées",
-          value: "240",
-          color: Colors.green,
-        ),
-        DashCard(
-          icon: CupertinoIcons.group_solid,
-          title: "Clients",
-          value: "240",
-          color: Colors.blue,
-        ),
-        DashCard(
-          icon: CupertinoIcons.calendar_today,
-          title: "Ventes journalières",
-          value: "120 ",
-          currency: "USD",
-          color: Colors.indigo,
-        ),
-      ],
-    );
+      );
+    });
   }
 
   List<DataRow> _createRows() {
@@ -389,7 +400,9 @@ class _DashBoardState extends State<DashBoard> {
                           fontSize: 12.0,
                         ),
                       ),
-                      onPressed: () async {},
+                      onPressed: () async {
+                        await factureDetailsModal(context, fac);
+                      },
                     ),
                     const SizedBox(
                       width: 5.0,
@@ -408,7 +421,9 @@ class _DashBoardState extends State<DashBoard> {
                           fontSize: 12.0,
                         ),
                       ),
-                      onPressed: () async {},
+                      onPressed: () async {
+                        showPayModal(context);
+                      },
                     ),
                     const SizedBox(
                       width: 5.0,
@@ -427,7 +442,26 @@ class _DashBoardState extends State<DashBoard> {
                           fontSize: 12.0,
                         ),
                       ),
-                      onPressed: () async {},
+                      onPressed: () async {
+                        var db = await DbHelper.initDb();
+                        XDialog.show(context,
+                            message:
+                                "Etes-vous sûr de vouloir supprimer cette facture ?",
+                            onValidated: () async {
+                          Xloading.showLottieLoading(context);
+                          await db.delete(
+                            "facture_details",
+                            where: "facture_id=?",
+                            whereArgs: [fac.factureId],
+                          );
+                          await db.delete("factures",
+                              where: "facture_id=?",
+                              whereArgs: [fac.factureId]).then((id) {
+                            Xloading.dismiss();
+                            dataController.loadFacturesEnAttente();
+                          });
+                        }, onFailed: () {});
+                      },
                     ),
                   ],
                 ),

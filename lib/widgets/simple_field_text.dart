@@ -10,6 +10,7 @@ class SimpleField extends StatelessWidget {
   final Function(String value) onChanged;
   final Function(String d) onChangedCurrency;
   final bool isCurrency;
+  final String selectedCurrency;
 
   const SimpleField({
     Key key,
@@ -22,11 +23,12 @@ class SimpleField extends StatelessWidget {
     this.onChanged,
     this.onChangedCurrency,
     this.isCurrency = false,
+    this.selectedCurrency,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    var currency = "USD";
+    var currency = selectedCurrency ?? "USD";
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.start,

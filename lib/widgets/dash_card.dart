@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:zando_m/global/controllers.dart';
 
 class DashCard extends StatelessWidget {
   final IconData icon;
@@ -23,7 +24,14 @@ class DashCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(5.0),
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {},
+          onTap: () {
+            if (title.contains('Factures')) {
+              navigatorController.navigateTo("/factures");
+            }
+            if (title.contains("Clients")) {
+              navigatorController.navigateTo("/clients");
+            }
+          },
           borderRadius: BorderRadius.circular(5.0),
           child: Padding(
             padding: const EdgeInsets.all(15.0),
@@ -70,10 +78,11 @@ class DashCard extends StatelessWidget {
                         text: TextSpan(
                           children: [
                             TextSpan(
-                              text: value,
+                              text: value.padLeft(2, '0'),
                               style: GoogleFonts.staatliches(
                                 color: color.shade50,
                                 fontWeight: FontWeight.w800,
+                                letterSpacing: 2.0,
                                 fontSize: 25.0,
                               ),
                             ),

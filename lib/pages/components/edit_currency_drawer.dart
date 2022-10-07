@@ -1,6 +1,8 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:zando_m/global/controllers.dart';
+import 'package:zando_m/services/db_helper.dart';
 
 import '../../widgets/custom_btn.dart';
 import '../../widgets/round_icon_btn.dart';
@@ -13,6 +15,7 @@ class EditCurrencyDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    var _text = TextEditingController();
     return Container(
       alignment: Alignment.topCenter,
       margin: const EdgeInsets.only(right: 15.0),
@@ -67,11 +70,14 @@ class EditCurrencyDrawer extends StatelessWidget {
               padding: const EdgeInsets.all(10.0),
               child: Column(
                 children: [
-                  const SimpleField(
+                  SimpleField(
                     hintText: "Saisir le taux du jour en CDF... ",
                     iconColor: Colors.pink,
+                    controller: _text,
+                    isCurrency: true,
                     icon: CupertinoIcons.money_dollar_circle_fill,
                     title: "Taux du jour",
+                    selectedCurrency: "CDF",
                   ),
                   const SizedBox(
                     height: 10.0,
@@ -80,7 +86,17 @@ class EditCurrencyDrawer extends StatelessWidget {
                     icon: CupertinoIcons.checkmark_alt_circle_fill,
                     color: Colors.blue,
                     label: "Valider les modifications",
-                    onPressed: () {},
+                    onPressed: () async {
+                      if (_text.text.isEmpty) {
+                        Navigator.pop(context);
+                        return;
+                      }
+                      await dataController
+                          .editCurrency(value: _text.text)
+                          .then((_) {
+                        Navigator.pop(context);
+                      });
+                    },
                   )
                 ],
               ),

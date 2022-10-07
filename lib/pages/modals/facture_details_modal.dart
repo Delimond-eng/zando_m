@@ -3,25 +3,50 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:zando_m/global/utils.dart';
+import 'package:zando_m/models/facture.dart';
+import 'package:zando_m/services/db_helper.dart';
 
 import '../../components/topbar.dart';
+import '../../models/client.dart';
+import '../../models/facture_detail.dart';
 import '../../widgets/costum_table.dart';
 import '../../widgets/round_icon_btn.dart';
 import '../../widgets/tot_info_view.dart';
+import 'print_modal.dart';
 
-factureDetailsModal(BuildContext context) {
+factureDetailsModal(BuildContext context, Facture facture) async {
+  List<FactureDetail> _items = <FactureDetail>[];
+  var _client = Client();
+  var db = await DbHelper.initDb();
+
+  await db.query("clients",
+      where: "client_id=?", whereArgs: [facture.factureClientId]).then(
+    (res) {
+      _client = Client.fromMap(res.first);
+    },
+  );
+  await db.query("facture_details",
+      where: "facture_id=?", whereArgs: [facture.factureClientId]).then(
+    (res) {
+      res.forEach((item) {
+        _items.add(FactureDetail.fromMap(item));
+      });
+    },
+  );
+
   showDialog(
     barrierColor: Colors.black12,
     context: context,
     builder: (BuildContext context) {
-      return FadeInRightBig(
+      return FadeInRight(
         child: Dialog(
           insetPadding: const EdgeInsets.all(100.0),
           backgroundColor: Colors.grey[100],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(5),
           ), //this right here
-          child: Container(
+          child: SizedBox(
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
             child: Column(
@@ -106,15 +131,17 @@ factureDetailsModal(BuildContext context) {
                                               height: 10.0,
                                             ),
                                             _clientInfoField(
-                                                title: "Nom",
-                                                value: "Gaston Delimond"),
+                                              title: "Nom",
+                                              value: _client.clientNom,
+                                            ),
                                             _clientInfoField(
-                                                title: "Téléphone",
-                                                value: "(+243) 81 371 99 44"),
+                                              title: "Téléphone",
+                                              value: _client.clientTel,
+                                            ),
                                             _clientInfoField(
-                                                title: "Adresse",
-                                                value:
-                                                    "03, Bismark Gombe Kinshasa"),
+                                              title: "Adresse",
+                                              value: _client.clientAdresse,
+                                            ),
                                           ],
                                         ),
                                       ),
@@ -144,7 +171,7 @@ factureDetailsModal(BuildContext context) {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              "Info montant facture",
+                                              "Net à payer",
                                               style: GoogleFonts.didactGothic(
                                                 color: Colors.indigo,
                                                 fontSize: 16.0,
@@ -154,13 +181,20 @@ factureDetailsModal(BuildContext context) {
                                             const SizedBox(
                                               height: 10.0,
                                             ),
-                                            const TotItem(
+                                            TotItem(
                                               alignment:
                                                   MainAxisAlignment.start,
+                                              title: "Montant en USD",
+                                              value: facture.factureMontant,
+                                              currency: facture.factureDevise,
                                             ),
-                                            const TotItem(
+                                            TotItem(
                                               alignment:
                                                   MainAxisAlignment.start,
+                                              title: "Eq. en CDF",
+                                              value:
+                                                  '${convertDollarsToCdf(double.parse(facture.factureMontant))}',
+                                              currency: "CDF",
                                             ),
                                           ],
                                         ),
@@ -170,7 +204,7 @@ factureDetailsModal(BuildContext context) {
                                 ],
                               ),
                             ),
-                            _dataTableView(context)
+                            _dataTableView(context, items: _items)
                           ],
                         ),
                       ),
@@ -200,7 +234,14 @@ factureDetailsModal(BuildContext context) {
                             ),
                             ElevatedButton.icon(
                               onPressed: () async {
-                                Get.back();
+                                Future.delayed(
+                                    const Duration(milliseconds: 500), () {
+                                  showPrintViewer(
+                                    context,
+                                    factureId: facture.factureId,
+                                  );
+                                  Get.back();
+                                });
                               },
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.all(20.0),
@@ -273,11 +314,7 @@ Widget _clientInfoField({String title, String value}) {
   );
 }
 
-_dataTableView(BuildContext context) {
-  final List<Map> _books = [
-    {'id': 100, 'title': 'Flutter Basics', 'pu': 25, 'qty': 1},
-    {'id': 102, 'title': 'Git and GitHub', 'pu': 10, 'qty': 2},
-  ];
+_dataTableView(BuildContext context, {List<FactureDetail> items}) {
   return Expanded(
     child: ListView(
       padding: const EdgeInsets.symmetric(
@@ -286,14 +323,14 @@ _dataTableView(BuildContext context) {
       ),
       children: [
         CostumTable(
-          cols: const ["id", "Libellé", "PU", "QTE", ""],
-          data: _books
+          cols: const ["Libellé", "PU", "QTE", "TOTAL"],
+          data: items
               .map(
-                (book) => DataRow(
+                (item) => DataRow(
                   cells: [
                     DataCell(
                       Text(
-                        'n° ' + book['id'].toString(),
+                        item.factureDetailLibelle,
                         style: GoogleFonts.didactGothic(
                           fontWeight: FontWeight.w600,
                         ),
@@ -301,7 +338,7 @@ _dataTableView(BuildContext context) {
                     ),
                     DataCell(
                       Text(
-                        book['title'],
+                        '${item.factureDetailPu.toString()} ${item.factureDetailDevise}',
                         style: GoogleFonts.didactGothic(
                           fontWeight: FontWeight.w600,
                         ),
@@ -309,7 +346,7 @@ _dataTableView(BuildContext context) {
                     ),
                     DataCell(
                       Text(
-                        "${book['pu'].toString()} USD",
+                        item.factureDetailQte.toString(),
                         style: GoogleFonts.didactGothic(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -318,33 +355,13 @@ _dataTableView(BuildContext context) {
                     ),
                     DataCell(
                       Text(
-                        book['qty'].toString(),
+                        '${item.total} ${item.factureDetailDevise}',
                         style: GoogleFonts.didactGothic(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                     ),
-                    DataCell(Row(
-                      children: [
-                        TextButton(
-                          style: TextButton.styleFrom(
-                            backgroundColor: Colors.pink,
-                            elevation: 2,
-                            padding: const EdgeInsets.all(8.0),
-                          ),
-                          child: Text(
-                            "Effacer",
-                            style: GoogleFonts.didactGothic(
-                              fontWeight: FontWeight.w600,
-                              color: Colors.white,
-                              fontSize: 12.0,
-                            ),
-                          ),
-                          onPressed: () {},
-                        ),
-                      ],
-                    ))
                   ],
                 ),
               )

@@ -1,3 +1,4 @@
+import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -160,21 +161,23 @@ class _ClientsState extends State<Clients> {
               ),
               Obx(() {
                 if (dataController.clients.isNotEmpty) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10.0,
-                      vertical: 5.0,
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: const [
-                        Flexible(
-                          child: SearchInput(
-                            spacedLeft: 0,
-                            hintText: "Recherche client...",
+                  return FadeInUp(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10.0,
+                        vertical: 5.0,
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: const [
+                          Flexible(
+                            child: SearchInput(
+                              spacedLeft: 0,
+                              hintText: "Recherche client...",
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 }
@@ -183,31 +186,35 @@ class _ClientsState extends State<Clients> {
               Expanded(
                 child: Obx(() {
                   if (dataController.clients.isEmpty) {
-                    return Center(
-                      child: Text(
-                        "Aucun client répertorié !",
-                        style: GoogleFonts.didactGothic(
-                          color: Colors.pink,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 18.0,
+                    return ZoomIn(
+                      child: Center(
+                        child: Text(
+                          "Aucun client répertorié !",
+                          style: GoogleFonts.didactGothic(
+                            color: Colors.pink,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 18.0,
+                          ),
                         ),
                       ),
                     );
                   } else {
-                    return ListView(
-                      padding: const EdgeInsets.all(10.0),
-                      children: [
-                        CostumTable(
-                          cols: const [
-                            "Date création",
-                            "Nom",
-                            "Téléphone",
-                            "Adresse",
-                            ""
-                          ],
-                          data: _createRows(),
-                        )
-                      ],
+                    return FadeInUp(
+                      child: ListView(
+                        padding: const EdgeInsets.all(10.0),
+                        children: [
+                          CostumTable(
+                            cols: const [
+                              "Date création",
+                              "Nom",
+                              "Téléphone",
+                              "Adresse",
+                              ""
+                            ],
+                            data: _createRows(),
+                          )
+                        ],
+                      ),
                     );
                   }
                 }),
