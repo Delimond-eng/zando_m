@@ -426,17 +426,12 @@ createFactureModal(BuildContext context,
                                                     .refreshDashboardCounts();
                                                 Xloading.dismiss();
                                                 if (showPrint) {
-                                                  Future.delayed(
-                                                      const Duration(
-                                                          milliseconds: 500),
-                                                      () {
-                                                    showPrintViewer(
-                                                      context,
-                                                      factureId: factureId,
-                                                    );
-                                                    navigatorController
-                                                        .navigateTo("/");
-                                                  });
+                                                  showPrintViewer(
+                                                    context,
+                                                    factureId: factureId,
+                                                  );
+                                                  navigatorController
+                                                      .navigateTo("/");
                                                 } else {
                                                   Future.delayed(
                                                       const Duration(
