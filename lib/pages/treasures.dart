@@ -117,6 +117,7 @@ class _TreasuresState extends State<Treasures> {
                             cols: const [
                               "Date création",
                               "Libellé",
+                              "Devise",
                               "Status",
                               ""
                             ],
@@ -151,6 +152,14 @@ class _TreasuresState extends State<Treasures> {
               DataCell(
                 Text(
                   compte.compteLibelle,
+                  style: GoogleFonts.didactGothic(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  compte.compteDevise,
                   style: GoogleFonts.didactGothic(
                     fontWeight: FontWeight.w600,
                   ),
@@ -208,7 +217,9 @@ class _TreasuresState extends State<Treasures> {
                         padding: const EdgeInsets.all(8.0),
                       ),
                       child: Text(
-                        "Desactiver",
+                        (compte.compteStatus == "actif")
+                            ? "Desactiver"
+                            : "Activer",
                         style: GoogleFonts.didactGothic(
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
