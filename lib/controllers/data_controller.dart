@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:zando_m/models/operation.dart';
 import 'package:zando_m/reports/report.dart';
 
 import '../models/client.dart';
@@ -15,12 +16,14 @@ class DataController extends GetxController {
   static DataController instance = Get.find();
   var users = <User>[].obs;
   var factures = <Facture>[].obs;
+  var filteredFactures = <Facture>[].obs;
   var clients = <Client>[].obs;
   var clientFactures = <Client>[].obs;
   var comptes = <Compte>[].obs;
   var allComptes = <Compte>[].obs;
   var currency = Currency().obs;
   var dashboardCounts = <DashboardCount>[].obs;
+  var paiements = <Operations>[].obs;
 
   @override
   void onInit() {
@@ -30,8 +33,7 @@ class DataController extends GetxController {
 
   Future<void> refreshDatas() async {
     refreshCurrency();
-    loadFacturesEnAttente();
-    loadClientFactures();
+    loadActivatedComptes();
   }
 
   loadUsers() async {
@@ -43,6 +45,34 @@ class DataController extends GetxController {
         users.add(User.fromMap(e));
       });
     }
+  }
+
+  loadFilterFactures(String key) async {
+    try {
+      var query;
+      switch (key) {
+        case "all":
+          query = await NativeDbHelper.rawQuery(
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT factures.facture_state='deleted' ORDER BY factures.facture_id DESC");
+          break;
+        case "pending":
+          query = await NativeDbHelper.rawQuery(
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='en cours' AND NOT factures.facture_state='deleted' ORDER BY factures.facture_id DESC");
+          break;
+        case "completed":
+          query = await NativeDbHelper.rawQuery(
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='paie' AND NOT factures.facture_state='deleted' ORDER BY factures.facture_id DESC");
+          break;
+        default:
+          print("other");
+      }
+      if (query != null) {
+        filteredFactures.clear();
+        query.forEach((e) {
+          filteredFactures.add(Facture.fromMap(e));
+        });
+      }
+    } catch (e) {}
   }
 
   refreshDashboardCounts() async {
@@ -85,17 +115,20 @@ class DataController extends GetxController {
     } catch (e) {}
   }
 
-  loadClientFactures() async {
-    try {
-      var allClients = await NativeDbHelper.rawQuery(
-          "SELECT * FROM clients INNER JOIN factures ON clients.client_id = factures.facture_client_id  WHERE factures.facture_statut = 'en attente' AND NOT clients.client_state='deleted' AND factures.facture_montant > 0 GROUP BY clients.client_id ORDER BY clients.client_id DESC");
-      if (allClients != null) {
-        clientFactures.clear();
-        allClients.forEach((e) {
-          clientFactures.add(Client.fromMap(e));
-        });
-      }
-    } catch (e) {}
+  loadPayments() async {
+    String statmentOp =
+        "operations.operation_id,operations.operation_libelle,operations.operation_type ,operations.operation_montant, operations.operation_devise, operations.operation_facture_id, operations.operation_mode, operations.operation_create_At";
+    String statmentFac =
+        "factures.facture_id, factures.facture_montant, factures.facture_devise, factures.facture_client_id, factures.facture_create_At, factures.facture_statut";
+    String statmentClient =
+        "clients.client_id, clients.client_nom,clients.client_tel, clients.client_adresse";
+    var query = await NativeDbHelper.rawQuery(
+      "SELECT $statmentOp,$statmentFac, $statmentClient, SUM(operations.operation_montant) AS totalPay FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id",
+    );
+    paiements.clear();
+    query.forEach((e) {
+      paiements.add(Operations.fromMap(e));
+    });
   }
 
   loadActivatedComptes() async {
@@ -114,7 +147,6 @@ class DataController extends GetxController {
   loadAllComptes() async {
     try {
       var db = await DbHelper.initDb();
-
       var json = await NativeDbHelper.rawQuery(
           "SELECT * FROM comptes WHERE NOT compte_state='deleted'");
       if (json != null) {

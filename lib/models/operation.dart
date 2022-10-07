@@ -5,18 +5,20 @@ import 'facture.dart';
 import 'user.dart';
 
 class Operations {
-  dynamic operationId;
+  int operationId;
   String operationLibelle;
   String operationType;
   String operationMode;
   String operationDate;
-  dynamic operationTimestamp;
-  dynamic operationMontant;
+  int operationTimestamp;
+  double operationMontant;
   String operationDevise;
   String operationState;
-  dynamic operationCompteId;
-  dynamic operationFactureId;
-  dynamic operationUserId;
+  int operationCompteId;
+  int operationFactureId;
+  int operationUserId;
+  double totalPayment;
+  String clientNom;
 
   Facture facture;
   Client client;
@@ -68,7 +70,7 @@ class Operations {
         DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
 
     if (operationTimestamp == null) {
-      data["operation_create_At"] = now.microsecondsSinceEpoch;
+      data["operation_create_At"] = convertToTimestamp(now);
     } else {
       data["operation_create_At"] = int.parse(operationTimestamp.toString());
     }
@@ -93,6 +95,12 @@ class Operations {
     operationUserId = data["operation_user_id"];
     operationMontant = data["operation_montant"];
     operationState = data["operation_state"];
+    if (data["totalPay"] != null) {
+      totalPayment = data["totalPay"];
+    }
+    if (data['client_nom'] != null) {
+      clientNom = data['client_nom'];
+    }
     if (data["operation_mode"] == null) {
       operationMode = "";
     } else {

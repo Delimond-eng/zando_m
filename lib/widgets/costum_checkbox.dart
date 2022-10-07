@@ -1,17 +1,16 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get_rx/src/rx_typedefs/rx_typedefs.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class CostumCheckBox extends StatelessWidget {
   final bool checked;
   final String title;
   final Function(bool checked) onChanged;
-  const CostumCheckBox({
-    Key key,
-    this.checked = false,
-    this.onChanged,
-    this.title,
-  }) : super(key: key);
+
+  const CostumCheckBox(
+      {Key key, this.checked = false, this.onChanged, this.title})
+      : super(key: key);
   @override
   Widget build(BuildContext context) {
     bool isChecked = false;

@@ -27,11 +27,11 @@ factureDetailsModal(BuildContext context, Facture facture) async {
     },
   );
   await db.query("facture_details",
-      where: "facture_id=?", whereArgs: [facture.factureClientId]).then(
+      where: "facture_id=?", whereArgs: [facture.factureId]).then(
     (res) {
-      res.forEach((item) {
+      for (var item in res) {
         _items.add(FactureDetail.fromMap(item));
-      });
+      }
     },
   );
 

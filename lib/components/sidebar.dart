@@ -82,6 +82,14 @@ class Sidebar extends StatelessWidget {
                       },
                     ),
                     SidebarMenuItem(
+                      icon: CupertinoIcons.doc_checkmark_fill,
+                      itemName: "/paiements",
+                      label: "Paiements",
+                      onTap: () {
+                        navigatorController.navigateTo("/paiements");
+                      },
+                    ),
+                    SidebarMenuItem(
                       icon: CupertinoIcons.cube_box_fill,
                       itemName: "/treasures",
                       label: "Trésoreries",

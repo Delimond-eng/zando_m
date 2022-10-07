@@ -13,12 +13,10 @@ import '../../widgets/round_icon_btn.dart';
 
 showPrintViewer(BuildContext context, {factureId}) async {
   var invoice = await DataManager.getFactureInvoice(factureId: factureId);
-  Get.back();
   if (invoice != null) {
     PdfPageFormat pageFormat = PdfPageFormat.standard;
     PrintingBuilder printPdf = PrintingBuilder(invoice: invoice);
     var bytesPdf = await printPdf.buildPdf(pageFormat);
-
     showDialog(
         barrierColor: Colors.black12,
         context: context,

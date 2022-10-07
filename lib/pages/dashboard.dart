@@ -422,7 +422,7 @@ class _DashBoardState extends State<DashBoard> {
                         ),
                       ),
                       onPressed: () async {
-                        showPayModal(context);
+                        showPayModal(context, fac);
                       },
                     ),
                     const SizedBox(

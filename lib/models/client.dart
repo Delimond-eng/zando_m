@@ -9,7 +9,7 @@ class Client {
   String clientAdresse;
   String clientCreatAt;
   String clientState;
-  dynamic clientTimestamp;
+  int clientTimestamp;
 
   bool isSelected = false;
   Client({
@@ -55,8 +55,12 @@ class Client {
     clientNom = data["client_nom"];
     clientTel = data["client_tel"];
     clientAdresse = data["client_adresse"];
-    clientState = data["client_state"];
-    userId = data["user_id"];
+    if (data["client_state"] != null) {
+      clientState = data["client_state"];
+    }
+    if (data["user_id"] != null) {
+      userId = data["user_id"];
+    }
     if (data["client_create_At"] != null) {
       try {
         clientTimestamp = data["client_create_At"];

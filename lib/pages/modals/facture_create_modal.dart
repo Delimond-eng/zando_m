@@ -415,6 +415,7 @@ createFactureModal(BuildContext context,
                                               (factureId) async {
                                                 for (var item in items) {
                                                   item.factureId = factureId;
+                                                  print(item.toMap());
                                                   await db.insert(
                                                     "facture_details",
                                                     item.toMap(),
@@ -614,11 +615,16 @@ _dataTableView(BuildContext context, {List<FactureDetail> items, setter}) {
               )
               .toList(),
         ),
-        TotItem(title: "Net à payer", currency: "USD", value: "$total"),
         TotItem(
-            title: "Eq. en CDF",
-            currency: "CDF",
-            value: "${convertDollarsToCdf(total)}"),
+          title: "Net à payer",
+          currency: "USD",
+          value: total.toStringAsFixed(2),
+        ),
+        TotItem(
+          title: "Eq. en CDF",
+          currency: "CDF",
+          value: "${convertDollarsToCdf(total)}",
+        ),
       ],
     ),
   );
