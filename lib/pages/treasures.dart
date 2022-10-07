@@ -9,6 +9,7 @@ import 'package:zando_m/services/db_helper.dart';
 import '../models/compte.dart';
 import '../responsive/base_widget.dart';
 import '../services/native_db_helper.dart';
+import '../services/synchonisation.dart';
 import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
 import '../widgets/search_input.dart';
@@ -203,7 +204,14 @@ class _TreasuresState extends State<Treasures> {
                           fontSize: 12.0,
                         ),
                       ),
-                      onPressed: () async {},
+                      onPressed: () async {
+                        var db = await DbHelper.initDb();
+                        var clients = await db.query("clients",
+                            where: "client_state=?", whereArgs: ["allowed"]);
+                        if (clients.isNotEmpty) {
+                          await Synchroniser.send({"clients": clients});
+                        }
+                      },
                     ),
                     const SizedBox(
                       width: 5.0,
