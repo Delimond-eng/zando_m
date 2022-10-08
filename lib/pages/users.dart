@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
 import 'package:zando_m/pages/components/add_user_drawer.dart';
 import 'package:zando_m/services/db_helper.dart';
+import 'package:zando_m/widgets/empty_table.dart';
 import '../responsive/base_widget.dart';
 import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
@@ -93,17 +94,19 @@ class _UsersState extends State<Users> {
   Widget _dataTableViewer(BuildContext context) {
     return Expanded(
       child: FadeInUp(
-        child: ListView(
-          padding: const EdgeInsets.all(10.0),
-          children: [
-            Obx(
-              () => CostumTable(
-                cols: const ["N°", "Nom", "Rôle", "Status", ""],
-                data: _createRows(),
-              ),
-            ),
-          ],
-        ),
+        child: Obx(() {
+          return dataController.users.isEmpty
+              ? const EmptyTable()
+              : ListView(
+                  padding: const EdgeInsets.all(10.0),
+                  children: [
+                    CostumTable(
+                      cols: const ["N°", "Nom", "Rôle", "Status", ""],
+                      data: _createRows(),
+                    ),
+                  ],
+                );
+        }),
       ),
     );
   }

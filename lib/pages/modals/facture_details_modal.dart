@@ -10,6 +10,7 @@ import 'package:zando_m/services/db_helper.dart';
 import '../../components/topbar.dart';
 import '../../models/client.dart';
 import '../../models/facture_detail.dart';
+import '../../reports/report.dart';
 import '../../widgets/costum_table.dart';
 import '../../widgets/round_icon_btn.dart';
 import '../../widgets/tot_info_view.dart';
@@ -34,6 +35,15 @@ factureDetailsModal(BuildContext context, Facture facture) async {
       }
     },
   );
+
+  /* LAST PAYMENT */
+
+  double _lastAmount = 0;
+  var lastPayment = await Report.checkLastPay(facture.factureId);
+  if (lastPayment != null) {
+    _lastAmount = lastPayment;
+  }
+  /* END CHECKING */
 
   showDialog(
     barrierColor: Colors.black12,
@@ -98,7 +108,7 @@ factureDetailsModal(BuildContext context, Facture facture) async {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Flexible(
-                                    flex: 8,
+                                    flex: 6,
                                     child: Container(
                                       width: double.infinity,
                                       decoration: BoxDecoration(
@@ -120,7 +130,7 @@ factureDetailsModal(BuildContext context, Facture facture) async {
                                               CrossAxisAlignment.start,
                                           children: [
                                             Text(
-                                              "Client Infos",
+                                              "Client infos",
                                               style: GoogleFonts.didactGothic(
                                                 color: Colors.indigo,
                                                 fontSize: 16.0,
@@ -151,7 +161,7 @@ factureDetailsModal(BuildContext context, Facture facture) async {
                                     width: 10.0,
                                   ),
                                   Flexible(
-                                    flex: 4,
+                                    flex: 6,
                                     child: Container(
                                       width: double.infinity,
                                       decoration: BoxDecoration(
@@ -170,13 +180,22 @@ factureDetailsModal(BuildContext context, Facture facture) async {
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              "Net à payer",
-                                              style: GoogleFonts.didactGothic(
-                                                color: Colors.indigo,
-                                                fontSize: 16.0,
-                                                fontWeight: FontWeight.w700,
-                                              ),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "Paiement infos",
+                                                  style:
+                                                      GoogleFonts.didactGothic(
+                                                    color: Colors.indigo,
+                                                    fontSize: 16.0,
+                                                    fontWeight: FontWeight.w700,
+                                                  ),
+                                                ),
+                                                _statusBuilder(facture)
+                                              ],
                                             ),
                                             const SizedBox(
                                               height: 10.0,
@@ -195,6 +214,40 @@ factureDetailsModal(BuildContext context, Facture facture) async {
                                               value:
                                                   '${convertDollarsToCdf(double.parse(facture.factureMontant))}',
                                               currency: "CDF",
+                                            ),
+                                            Row(
+                                              children: [
+                                                Flexible(
+                                                  child: TotItem(
+                                                    alignment:
+                                                        MainAxisAlignment.start,
+                                                    title: "Montant payé",
+                                                    value:
+                                                        _lastAmount.toString(),
+                                                    fSize: 25.0,
+                                                    currency:
+                                                        facture.factureDevise,
+                                                    color: Colors.green[800],
+                                                  ),
+                                                ),
+                                                const Text("|"),
+                                                Flexible(
+                                                  child: TotItem(
+                                                    alignment:
+                                                        MainAxisAlignment.start,
+                                                    title: "Montant restant",
+                                                    value: (double.parse(facture
+                                                                .factureMontant) -
+                                                            _lastAmount)
+                                                        .toStringAsFixed(2)
+                                                        .toString(),
+                                                    color: Colors.pink[700],
+                                                    fSize: 25.0,
+                                                    currency:
+                                                        facture.factureDevise,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                           ],
                                         ),
@@ -269,6 +322,43 @@ factureDetailsModal(BuildContext context, Facture facture) async {
         ),
       );
     },
+  );
+}
+
+Widget _statusBuilder(Facture facture) {
+  return Row(
+    children: [
+      Text(
+        "Status : ",
+        style: GoogleFonts.didactGothic(
+          color: Colors.black,
+          fontSize: 15.0,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      const SizedBox(
+        width: 5.0,
+      ),
+      Container(
+        padding: const EdgeInsets.all(5.0),
+        decoration: BoxDecoration(
+          color: (facture.factureStatut == "paie")
+              ? Colors.green[200]
+              : Colors.pink[100],
+          borderRadius: BorderRadius.circular(3.0),
+        ),
+        child: Text(
+          facture.factureStatut,
+          style: GoogleFonts.didactGothic(
+            fontWeight: FontWeight.w600,
+            fontSize: 12.0,
+            color: (facture.factureStatut == "paie")
+                ? Colors.green[700]
+                : Colors.pink,
+          ),
+        ),
+      ),
+    ],
   );
 }
 

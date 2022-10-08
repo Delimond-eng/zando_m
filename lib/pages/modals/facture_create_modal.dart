@@ -415,18 +415,22 @@ createFactureModal(BuildContext context,
                                               (factureId) async {
                                                 for (var item in items) {
                                                   item.factureId = factureId;
-                                                  print(item.toMap());
                                                   await db.insert(
                                                     "facture_details",
                                                     item.toMap(),
                                                   );
                                                 }
+                                                Xloading.dismiss();
                                                 dataController
                                                     .loadFacturesEnAttente();
                                                 dataController
                                                     .refreshDashboardCounts();
-                                                Xloading.dismiss();
+
                                                 if (showPrint) {
+                                                  Future.delayed(
+                                                    const Duration(
+                                                        milliseconds: 200),
+                                                  );
                                                   showPrintViewer(
                                                     context,
                                                     factureId: factureId,

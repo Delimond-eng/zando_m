@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:zando_m/models/operation.dart';
+import 'package:zando_m/reports/models/daily_count.dart';
 import 'package:zando_m/reports/report.dart';
 
 import '../models/client.dart';
@@ -23,7 +24,9 @@ class DataController extends GetxController {
   var allComptes = <Compte>[].obs;
   var currency = Currency().obs;
   var dashboardCounts = <DashboardCount>[].obs;
+  var dailySums = <DailyCount>[].obs;
   var paiements = <Operations>[].obs;
+  var paiementDetails = <Operations>[].obs;
 
   @override
   void onInit() {
@@ -81,6 +84,12 @@ class DataController extends GetxController {
     dashboardCounts.addAll(counts);
   }
 
+  refreshDayCompteSum() async {
+    var sums = await Report.getDayAccountSums();
+    dailySums.clear();
+    dailySums.addAll(sums);
+  }
+
   refreshCurrency() async {
     var db = await DbHelper.initDb();
     var taux = await db.query("currencies");
@@ -115,19 +124,38 @@ class DataController extends GetxController {
     } catch (e) {}
   }
 
-  loadPayments() async {
+  loadPayments(String key, {int date}) async {
     String statmentOp =
         "operations.operation_id,operations.operation_libelle,operations.operation_type ,operations.operation_montant, operations.operation_devise, operations.operation_facture_id, operations.operation_mode, operations.operation_create_At";
     String statmentFac =
         "factures.facture_id, factures.facture_montant, factures.facture_devise, factures.facture_client_id, factures.facture_create_At, factures.facture_statut";
     String statmentClient =
         "clients.client_id, clients.client_nom,clients.client_tel, clients.client_adresse";
-    var query = await NativeDbHelper.rawQuery(
-      "SELECT $statmentOp,$statmentFac, $statmentClient, SUM(operations.operation_montant) AS totalPay FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id",
-    );
+    var query;
+    switch (key) {
+      case "all":
+        query = await NativeDbHelper.rawQuery(
+          "SELECT $statmentOp,$statmentFac, $statmentClient, SUM(operations.operation_montant) AS totalPay FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id",
+        );
+        break;
+      case "date":
+        query = await NativeDbHelper.rawQuery(
+          "SELECT $statmentOp,$statmentFac, $statmentClient, SUM(operations.operation_montant) AS totalPay FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND operations.operation_create_At = $date  GROUP BY operations.operation_facture_id",
+        );
+        break;
+    }
     paiements.clear();
     query.forEach((e) {
       paiements.add(Operations.fromMap(e));
+    });
+  }
+
+  showPaiementDetails(int factureId) async {
+    var query = await NativeDbHelper.rawQuery(
+        "SELECT * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND operations.operation_facture_id = $factureId");
+    paiementDetails.clear();
+    query.forEach((e) {
+      paiementDetails.add(Operations.fromMap(e));
     });
   }
 

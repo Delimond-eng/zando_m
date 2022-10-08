@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
 import 'package:zando_m/services/db_helper.dart';
+import 'package:zando_m/widgets/empty_table.dart';
 
 import '../models/compte.dart';
 import '../responsive/base_widget.dart';
@@ -111,21 +112,23 @@ class _TreasuresState extends State<Treasures> {
                 Expanded(
                   child: Obx(
                     () => FadeInUp(
-                      child: ListView(
-                        padding: const EdgeInsets.all(10.0),
-                        children: [
-                          CostumTable(
-                            cols: const [
-                              "Date création",
-                              "Libellé",
-                              "Devise",
-                              "Status",
-                              ""
-                            ],
-                            data: _createRows(),
-                          ),
-                        ],
-                      ),
+                      child: dataController.allComptes.isEmpty
+                          ? const EmptyTable()
+                          : ListView(
+                              padding: const EdgeInsets.all(10.0),
+                              children: [
+                                CostumTable(
+                                  cols: const [
+                                    "Date création",
+                                    "Libellé",
+                                    "Devise",
+                                    "Status",
+                                    ""
+                                  ],
+                                  data: _createRows(),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                 )
@@ -192,32 +195,6 @@ class _TreasuresState extends State<Treasures> {
                   children: [
                     TextButton(
                       style: TextButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        elevation: 2,
-                        padding: const EdgeInsets.all(8.0),
-                      ),
-                      child: Text(
-                        "Voir détails",
-                        style: GoogleFonts.didactGothic(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          fontSize: 12.0,
-                        ),
-                      ),
-                      onPressed: () async {
-                        var db = await DbHelper.initDb();
-                        var clients = await db.query("clients",
-                            where: "client_state=?", whereArgs: ["allowed"]);
-                        if (clients.isNotEmpty) {
-                          await Synchroniser.send({"clients": clients});
-                        }
-                      },
-                    ),
-                    const SizedBox(
-                      width: 5.0,
-                    ),
-                    TextButton(
-                      style: TextButton.styleFrom(
                         backgroundColor: compte.compteStatus == "actif"
                             ? Colors.pink
                             : Colors.green,
@@ -246,6 +223,7 @@ class _TreasuresState extends State<Treasures> {
                             where: "compte_id=?",
                             whereArgs: [compte.compteId]).then((id) {
                           dataController.loadAllComptes();
+                          dataController.loadActivatedComptes();
                         });
                       },
                     ),

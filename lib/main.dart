@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'controllers/auth_controller.dart';
 import 'controllers/data_controller.dart';
@@ -45,6 +46,14 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.pink,
         fontFamily: 'Didact Gothic',
       ),
+      // ignore: prefer_const_literals_to_create_immutables
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+
+      supportedLocales: const [Locale('fr', 'FR')],
       home: Builder(
         builder: (context) {
           return const AuthenticateScreen();

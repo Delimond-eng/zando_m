@@ -11,6 +11,7 @@ import 'package:zando_m/services/db_helper.dart';
 import 'package:zando_m/utilities/modals.dart';
 import 'package:zando_m/widgets/costum_table.dart';
 import 'package:zando_m/widgets/dash_card.dart';
+import 'package:zando_m/widgets/empty_table.dart';
 
 import '../services/native_db_helper.dart';
 import '../widgets/custom_page.dart';
@@ -55,25 +56,27 @@ class _DashBoardState extends State<DashBoard> {
                 Expanded(
                   child: Obx(() {
                     return FadeInUpBig(
-                      child: ListView(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10.0,
-                          vertical: 5.0,
-                        ),
-                        children: [
-                          CostumTable(
-                            cols: const [
-                              "N° Fac.",
-                              "Date",
-                              "Montant",
-                              "Status",
-                              "Client",
-                              ""
-                            ],
-                            data: _createRows(),
-                          ),
-                        ],
-                      ),
+                      child: dataController.factures.isEmpty
+                          ? const EmptyTable()
+                          : ListView(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10.0,
+                                vertical: 5.0,
+                              ),
+                              children: [
+                                CostumTable(
+                                  cols: const [
+                                    "N° Fac.",
+                                    "Date",
+                                    "Montant",
+                                    "Status",
+                                    "Client",
+                                    ""
+                                  ],
+                                  data: _createRows(),
+                                ),
+                              ],
+                            ),
                     );
                   }),
                 )
@@ -414,7 +417,7 @@ class _DashBoardState extends State<DashBoard> {
                         padding: const EdgeInsets.all(8.0),
                       ),
                       child: Text(
-                        "Paiement",
+                        "Payer",
                         style: GoogleFonts.didactGothic(
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
@@ -430,7 +433,7 @@ class _DashBoardState extends State<DashBoard> {
                     ),
                     TextButton(
                       style: TextButton.styleFrom(
-                        backgroundColor: Colors.red,
+                        backgroundColor: Colors.pink,
                         elevation: 2,
                         padding: const EdgeInsets.all(8.0),
                       ),
@@ -442,26 +445,7 @@ class _DashBoardState extends State<DashBoard> {
                           fontSize: 12.0,
                         ),
                       ),
-                      onPressed: () async {
-                        var db = await DbHelper.initDb();
-                        XDialog.show(context,
-                            message:
-                                "Etes-vous sûr de vouloir supprimer cette facture ?",
-                            onValidated: () async {
-                          Xloading.showLottieLoading(context);
-                          await db.delete(
-                            "facture_details",
-                            where: "facture_id=?",
-                            whereArgs: [fac.factureId],
-                          );
-                          await db.delete("factures",
-                              where: "facture_id=?",
-                              whereArgs: [fac.factureId]).then((id) {
-                            Xloading.dismiss();
-                            dataController.loadFacturesEnAttente();
-                          });
-                        }, onFailed: () {});
-                      },
+                      onPressed: () => _deleteFacture(fac),
                     ),
                   ],
                 ),
@@ -470,6 +454,25 @@ class _DashBoardState extends State<DashBoard> {
           ),
         )
         .toList();
+  }
+
+  _deleteFacture(Facture fac) async {
+    var db = await DbHelper.initDb();
+    XDialog.show(context,
+        message: "Etes-vous sûr de vouloir supprimer cette facture ?",
+        onValidated: () async {
+      Xloading.showLottieLoading(context);
+      await db.delete(
+        "facture_details",
+        where: "facture_id=?",
+        whereArgs: [fac.factureId],
+      );
+      await db.delete("factures",
+          where: "facture_id=?", whereArgs: [fac.factureId]).then((id) {
+        Xloading.dismiss();
+        dataController.loadFacturesEnAttente();
+      });
+    }, onFailed: () {});
   }
 }
 

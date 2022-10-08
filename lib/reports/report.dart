@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:zando_m/global/utils.dart';
+import 'package:zando_m/reports/models/daily_count.dart';
 import 'package:zando_m/reports/models/dashboard_count.dart';
 
 import '../services/db_helper.dart';
@@ -31,6 +32,55 @@ class Report {
       default:
         return 0;
     }
+  }
+
+  static Future<double> _daySum(String mode) async {
+    var date = DateTime.now();
+    var dateConverted = DateTime(date.year, date.month, date.day);
+    var ms = dateConverted.microsecondsSinceEpoch;
+    var timesmp = (ms / 1000).round();
+    var db = await DbHelper.initDb();
+    var query = await db.rawQuery(
+        "SELECT SUM(operation_montant) AS daySum FROM operations WHERE operation_mode = '$mode' AND operation_create_At='$timesmp' AND NOT operation_state='deleted'");
+    return query.first["daySum"] ?? 0;
+  }
+
+  static Future<List<DailyCount>> getDayAccountSums() async {
+    final List<DailyCount> data = <DailyCount>[];
+
+    var sum1 = await _daySum("Cash");
+    var cashData = DailyCount(
+      icon: Icons.date_range_rounded,
+      sum: sum1,
+      title: "Paiement cash",
+    );
+    data.add(cashData);
+
+    var sum2 = await _daySum("Paiement mobile");
+    var mobiData = DailyCount(
+      icon: Icons.mobile_friendly,
+      sum: sum2,
+      title: "Paiement mobile",
+    );
+    data.add(mobiData);
+
+    var sum3 = await _daySum("Virement");
+    var vData = DailyCount(
+      icon: CupertinoIcons.arrow_right_arrow_left_circle_fill,
+      sum: sum3,
+      title: "Virement bancaire",
+    );
+    data.add(vData);
+
+    var sum4 = await _daySum("Chèque");
+    var chequeData = DailyCount(
+      icon: CupertinoIcons.doc_append,
+      sum: sum4,
+      title: "P. par Chèque",
+    );
+    data.add(chequeData);
+
+    return data;
   }
 
   static Future<List<DashboardCount>> getCount() async {
@@ -88,5 +138,13 @@ class Report {
 
     /*return list completed */
     return counts;
+  }
+
+  static Future<double> checkLastPay(int factureId) async {
+    var db = await DbHelper.initDb();
+    var query = await db.rawQuery(
+      "SELECT SUM(operation_montant) AS lastAmount FROM operations INNER JOIN factures ON operations.operation_facture_id = factures.facture_id WHERE operations.operation_facture_id = $factureId",
+    );
+    return query.isEmpty ? null : query.first['lastAmount'];
   }
 }

@@ -2,8 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
-import 'package:zando_m/services/db_helper.dart';
-
 import '../../widgets/custom_btn.dart';
 import '../../widgets/round_icon_btn.dart';
 import '../../widgets/simple_field_text.dart';

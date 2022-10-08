@@ -6,12 +6,16 @@ class TotItem extends StatelessWidget {
   final String title;
   final String value;
   final String currency;
+  final Color color;
+  final double fSize;
   const TotItem({
     Key key,
     this.alignment,
     this.value,
     this.currency,
     this.title,
+    this.color,
+    this.fSize,
   }) : super(key: key);
 
   @override
@@ -42,23 +46,23 @@ class TotItem extends StatelessWidget {
                       text: "$title : ",
                       style: GoogleFonts.didactGothic(
                         color: Colors.black,
-                        fontSize: 16.0,
+                        fontSize: 15.0,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     TextSpan(
                       text: " $value ",
                       style: GoogleFonts.staatliches(
-                        color: Colors.black,
+                        color: color ?? Colors.black,
                         fontWeight: FontWeight.w800,
-                        fontSize: 18.0,
+                        fontSize: fSize ?? 18.0,
                       ),
                     ),
                     TextSpan(
                       text: " $currency",
                       style: GoogleFonts.didactGothic(
-                        color: Colors.blue,
-                        fontSize: 15.0,
+                        color: color,
+                        fontSize: 12.0,
                         fontWeight: FontWeight.w600,
                       ),
                     )

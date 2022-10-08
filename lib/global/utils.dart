@@ -53,7 +53,7 @@ String dateToString(DateTime date) {
   return converted;
 }
 
-showDatePicked(context) async {
+Future<int> showDatePicked(BuildContext context) async {
   var date = await showDatePicker(
     locale: const Locale("fr", "FR"),
     context: context,
@@ -63,8 +63,10 @@ showDatePicked(context) async {
   );
   if (date != null) {
     DateTime dateConverted = DateTime(date.year, date.month, date.day);
-    return dateConverted.microsecondsSinceEpoch;
+    var ms = dateConverted.microsecondsSinceEpoch;
+    return (ms / 1000).round();
   }
+  return null;
 }
 
 double convertCdfToDollars(double cdf) {

@@ -5,14 +5,17 @@ import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/pages/modals/payModal.dart';
 import 'package:zando_m/utilities/modals.dart';
+import 'package:zando_m/widgets/empty_table.dart';
 
 import '../global/controllers.dart';
 import '../models/facture.dart';
 import '../responsive/base_widget.dart';
+import '../services/native_db_helper.dart';
 import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
 import '../widgets/filter_btn.dart';
 import '../widgets/search_input.dart';
+import 'modals/facture_details_modal.dart';
 
 class Factures extends StatefulWidget {
   const Factures({Key key}) : super(key: key);
@@ -22,7 +25,7 @@ class Factures extends StatefulWidget {
 }
 
 class _FacturesState extends State<Factures> {
-  List<Facture> factures = <Facture>[];
+  var _filterKeyword = "all";
   @override
   void initState() {
     super.initState();
@@ -71,21 +74,23 @@ class _FacturesState extends State<Factures> {
     return Expanded(
       child: FadeInUp(
         child: Obx(() {
-          return ListView(
-            padding: const EdgeInsets.all(10.0),
-            children: [
-              CostumTable(
-                cols: const [
-                  "Date création",
-                  "Montant",
-                  "Status",
-                  "Client",
-                  ""
-                ],
-                data: _createRows(context),
-              ),
-            ],
-          );
+          return dataController.filteredFactures.isEmpty
+              ? const EmptyTable()
+              : ListView(
+                  padding: const EdgeInsets.all(10.0),
+                  children: [
+                    CostumTable(
+                      cols: const [
+                        "Date création",
+                        "Montant",
+                        "Status",
+                        "Client",
+                        ""
+                      ],
+                      data: _createRows(context),
+                    ),
+                  ],
+                );
         }),
       ),
     );
@@ -94,11 +99,10 @@ class _FacturesState extends State<Factures> {
   final List<Map> _filters = [
     {"keyw": "all", "title": "Toutes les factures"},
     {"keyw": "pending", "title": "Factures en cours"},
-    {"keyw": "completed", "title": "Factures en cours"},
+    {"keyw": "completed", "title": "Factures réglées"},
   ];
 
   Widget _topFilters(BuildContext context) {
-    var _filterKeyword = "all";
     return FadeInUp(
       child: Padding(
         padding: const EdgeInsets.symmetric(
@@ -135,9 +139,13 @@ class _FacturesState extends State<Factures> {
               const SizedBox(
                 width: 10.0,
               ),
-              const Flexible(
+              Flexible(
                 child: SearchInput(
                   spacedLeft: 0,
+                  hintText: "Recherche facture par un nom du client ...",
+                  onChanged: (kWord) async {
+                    await _seachFactures(_filterKeyword, kWord);
+                  },
                 ),
               ),
             ],
@@ -145,6 +153,34 @@ class _FacturesState extends State<Factures> {
         }),
       ),
     );
+  }
+
+  _seachFactures(String key, String kword) async {
+    try {
+      var query;
+      switch (key) {
+        case "all":
+          query = await NativeDbHelper.rawQuery(
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT factures.facture_state='deleted' AND clients.client_nom LIKE '%$kword%'");
+          break;
+        case "pending":
+          query = await NativeDbHelper.rawQuery(
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='en cours' AND NOT factures.facture_state='deleted' AND clients.client_nom LIKE '%$kword%'");
+          break;
+        case "completed":
+          query = await NativeDbHelper.rawQuery(
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='paie' AND NOT factures.facture_state='deleted' AND clients.client_nom LIKE '%$kword%'");
+          break;
+        default:
+          print("other");
+      }
+      if (query != null) {
+        dataController.filteredFactures.clear();
+        query.forEach((e) {
+          dataController.filteredFactures.add(Facture.fromMap(e));
+        });
+      }
+    } catch (e) {}
   }
 
   List<DataRow> _createRows(BuildContext context) {
@@ -200,29 +236,31 @@ class _FacturesState extends State<Factures> {
               DataCell(
                 Row(
                   children: [
-                    if (data.factureStatut != "paie") ...[
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          elevation: 2,
-                          padding: const EdgeInsets.all(8.0),
-                        ),
-                        child: Text(
-                          "Payer",
-                          style: GoogleFonts.didactGothic(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            fontSize: 12.0,
-                          ),
-                        ),
-                        onPressed: () {
-                          showPayModal(context, data);
-                        },
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: (data.factureStatut != "paie")
+                            ? Colors.green
+                            : Colors.grey,
+                        elevation: 2,
+                        padding: const EdgeInsets.all(8.0),
                       ),
-                      const SizedBox(
-                        width: 5.0,
+                      child: Text(
+                        "Payer",
+                        style: GoogleFonts.didactGothic(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 12.0,
+                        ),
                       ),
-                    ],
+                      onPressed: (data.factureStatut != "paie")
+                          ? () {
+                              showPayModal(context, data);
+                            }
+                          : null,
+                    ),
+                    const SizedBox(
+                      width: 5.0,
+                    ),
                     TextButton(
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -237,7 +275,9 @@ class _FacturesState extends State<Factures> {
                           fontSize: 12.0,
                         ),
                       ),
-                      onPressed: () async {},
+                      onPressed: () async {
+                        await factureDetailsModal(context, data);
+                      },
                     ),
                   ],
                 ),

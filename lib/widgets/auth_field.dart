@@ -28,7 +28,7 @@ class _AuthFieldState extends State<AuthField> {
       height: 50.0,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(5.0),
-        color: Colors.grey[200],
+        color: const Color.fromARGB(255, 212, 211, 211),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8.0),

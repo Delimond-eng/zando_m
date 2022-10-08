@@ -6,8 +6,11 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
 import 'package:zando_m/pages/modals/facture_create_modal.dart';
 import 'package:zando_m/utilities/modals.dart';
+import 'package:zando_m/widgets/empty_table.dart';
 
+import '../models/client.dart';
 import '../services/db_helper.dart';
+import '../services/native_db_helper.dart';
 import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
 import '../widgets/search_input.dart';
@@ -83,7 +86,10 @@ class _ClientsState extends State<Clients> {
                     ),
                     onPressed: () async {
                       var db = await DbHelper.initDb();
-
+                      var c = await db.query("clients");
+                      if (c.length == 1) {
+                        return;
+                      }
                       XDialog.show(context,
                           message:
                               "Etes-vous sûr de vouloir supprimér ce client ?",
@@ -169,11 +175,14 @@ class _ClientsState extends State<Clients> {
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
+                        children: [
                           Flexible(
                             child: SearchInput(
                               spacedLeft: 0,
                               hintText: "Recherche client...",
+                              onChanged: (kWord) async {
+                                await searchClient(kWord);
+                              },
                             ),
                           ),
                         ],
@@ -186,18 +195,7 @@ class _ClientsState extends State<Clients> {
               Expanded(
                 child: Obx(() {
                   if (dataController.clients.isEmpty) {
-                    return ZoomIn(
-                      child: Center(
-                        child: Text(
-                          "Aucun client répertorié !",
-                          style: GoogleFonts.didactGothic(
-                            color: Colors.pink,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 18.0,
-                          ),
-                        ),
-                      ),
-                    );
+                    return const EmptyTable();
                   } else {
                     return FadeInUp(
                       child: ListView(
@@ -224,5 +222,18 @@ class _ClientsState extends State<Clients> {
         },
       ),
     );
+  }
+
+  searchClient(String kword) async {
+    try {
+      var allClients = await NativeDbHelper.rawQuery(
+          "SELECT * FROM clients WHERE NOT client_state='deleted' AND client_nom LIKE '%$kword%'");
+      if (allClients != null) {
+        dataController.clients.clear();
+        allClients.forEach((e) {
+          dataController.clients.add(Client.fromMap(e));
+        });
+      }
+    } catch (e) {}
   }
 }

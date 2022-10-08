@@ -14,6 +14,7 @@ import '../../components/topbar.dart';
 import '../../models/compte.dart';
 import '../../models/facture.dart';
 import '../../models/operation.dart';
+import '../../reports/report.dart';
 import '../../widgets/round_icon_btn.dart';
 import '../../widgets/simple_field_text.dart';
 
@@ -23,7 +24,7 @@ showPayModal(BuildContext context, Facture selectedFac) async {
   String _devise = "USD";
 
   var _textMontant = TextEditingController();
-  var lastPayment = await checkLastPay(selectedFac.factureId);
+  var lastPayment = await Report.checkLastPay(selectedFac.factureId);
   if (lastPayment != null) {
     var currentAmount = double.parse(selectedFac.factureMontant) - lastPayment;
     _textMontant.text = currentAmount.toStringAsFixed(2);
@@ -259,7 +260,7 @@ showPayModal(BuildContext context, Facture selectedFac) async {
 
                           /* check last pay */
                           var lastPay =
-                              await checkLastPay(selectedFac.factureId);
+                              await Report.checkLastPay(selectedFac.factureId);
                           /* end check last pay */
 
                           var convertedInputAmount =
@@ -369,12 +370,4 @@ showPayModal(BuildContext context, Facture selectedFac) async {
       );
     },
   );
-}
-
-Future<double> checkLastPay(int factureId) async {
-  var db = await DbHelper.initDb();
-  var query = await db.rawQuery(
-    "SELECT SUM(operation_montant) AS lastAmount FROM operations INNER JOIN factures ON operations.operation_facture_id = factures.facture_id WHERE operations.operation_facture_id = $factureId",
-  );
-  return query.isEmpty ? null : query.first['lastAmount'];
 }

@@ -4,7 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
+import 'package:zando_m/global/utils.dart';
+import 'package:zando_m/pages/components/payment_details_drawer.dart';
+import 'package:zando_m/widgets/empty_table.dart';
+import '../models/operation.dart';
 import '../responsive/base_widget.dart';
+import '../services/db_helper.dart';
+import '../services/native_db_helper.dart';
+import '../utilities/modals.dart';
 import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
 import '../widgets/filter_btn.dart';
@@ -19,10 +26,11 @@ class Paiements extends StatefulWidget {
 }
 
 class _PaiementsState extends State<Paiements> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
   @override
   void initState() {
     super.initState();
-    dataController.loadPayments();
+    dataController.loadPayments("all");
   }
 
   final List<Map> _filters = [
@@ -32,8 +40,10 @@ class _PaiementsState extends State<Paiements> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawerScrimColor: Colors.black12,
+      key: _scaffoldKey,
+      drawerScrimColor: Colors.transparent,
       backgroundColor: Colors.transparent,
+      endDrawer: const PaymentDetailsDrawer(),
       body: CustomPage(
         title: "Paiements",
         icon: CupertinoIcons.doc_checkmark_fill,
@@ -71,24 +81,26 @@ class _PaiementsState extends State<Paiements> {
     return Expanded(
       child: FadeInUp(
         child: Obx(() {
-          return ListView(
-            padding: const EdgeInsets.all(10.0),
-            children: [
-              CostumTable(
-                cols: const [
-                  "Date",
-                  "Montant",
-                  "Paiement",
-                  "Reste",
-                  "Mode",
-                  "Status",
-                  "Client",
-                  ""
-                ],
-                data: _createRows(context),
-              ),
-            ],
-          );
+          return dataController.paiements.isEmpty
+              ? const EmptyTable()
+              : ListView(
+                  padding: const EdgeInsets.all(10.0),
+                  children: [
+                    CostumTable(
+                      cols: const [
+                        "Date",
+                        "Montant",
+                        "Paiement",
+                        "Reste",
+                        "Mode",
+                        "Status",
+                        "Client",
+                        ""
+                      ],
+                      data: _createRows(context),
+                    ),
+                  ],
+                );
         }),
       ),
     );
@@ -114,10 +126,21 @@ class _PaiementsState extends State<Paiements> {
                       title: e['title'],
                       margin: 10.0,
                       icon: Icons.filter_list_rounded,
-                      onPressed: () {
-                        setter(() {
-                          _selectedFilterKeyword = e['keyw'];
-                        });
+                      onPressed: () async {
+                        if (e['keyw'] == "date") {
+                          var date = await showDatePicked(context);
+                          if (date != null) {
+                            dataController.loadPayments("date", date: date);
+                            setter(() {
+                              _selectedFilterKeyword = e['keyw'];
+                            });
+                          }
+                        } else {
+                          dataController.loadPayments("all");
+                          setter(() {
+                            _selectedFilterKeyword = e['keyw'];
+                          });
+                        }
                       },
                     );
                   })
@@ -126,9 +149,13 @@ class _PaiementsState extends State<Paiements> {
               const SizedBox(
                 width: 10.0,
               ),
-              const Flexible(
+              Flexible(
                 child: SearchInput(
                   spacedLeft: 0,
+                  hintText: "Recherche paiement par un nom du client...",
+                  onChanged: (kWord) async {
+                    await _searchPay(kWord);
+                  },
                 ),
               ),
             ],
@@ -153,7 +180,7 @@ class _PaiementsState extends State<Paiements> {
               ),
               DataCell(
                 Text(
-                  data.facture.factureMontant,
+                  '${data.facture.factureMontant} ${data.operationDevise}',
                   style: GoogleFonts.didactGothic(
                     fontWeight: FontWeight.w600,
                   ),
@@ -161,7 +188,7 @@ class _PaiementsState extends State<Paiements> {
               ),
               DataCell(
                 Text(
-                  data.totalPayment.toString(),
+                  '${data.totalPayment.toString()} ${data.operationDevise}',
                   style: GoogleFonts.didactGothic(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -170,7 +197,7 @@ class _PaiementsState extends State<Paiements> {
               ),
               DataCell(
                 Text(
-                  '${((double.parse(data.facture.factureMontant) - data.totalPayment))}',
+                  '${((double.parse(data.facture.factureMontant) - data.totalPayment))} ${data.operationDevise}',
                   style: GoogleFonts.didactGothic(
                     fontWeight: FontWeight.w600,
                   ),
@@ -216,29 +243,6 @@ class _PaiementsState extends State<Paiements> {
               DataCell(
                 Row(
                   children: [
-                    if (data.facture.factureStatut != "paie") ...[
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          elevation: 2,
-                          padding: const EdgeInsets.all(8.0),
-                        ),
-                        child: Text(
-                          "Payer",
-                          style: GoogleFonts.didactGothic(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                            fontSize: 12.0,
-                          ),
-                        ),
-                        onPressed: () {
-                          showPayModal(context, data.facture);
-                        },
-                      ),
-                      const SizedBox(
-                        width: 5.0,
-                      ),
-                    ],
                     TextButton(
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -254,8 +258,29 @@ class _PaiementsState extends State<Paiements> {
                         ),
                       ),
                       onPressed: () async {
-                        await dataController.loadPayments();
+                        await dataController
+                            .showPaiementDetails(data.operationFactureId);
+                        _scaffoldKey.currentState.openEndDrawer();
                       },
+                    ),
+                    const SizedBox(
+                      width: 8.0,
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.pink,
+                        elevation: 2,
+                        padding: const EdgeInsets.all(8.0),
+                      ),
+                      child: Text(
+                        "Supprimer",
+                        style: GoogleFonts.didactGothic(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 12.0,
+                        ),
+                      ),
+                      onPressed: () => _deleteOperation(data),
                     ),
                   ],
                 ),
@@ -264,5 +289,44 @@ class _PaiementsState extends State<Paiements> {
           ),
         )
         .toList();
+  }
+
+  _deleteOperation(Operations data) async {
+    var db = await DbHelper.initDb();
+    XDialog.show(context,
+        message: "Etes-vous sûr de vouloir supprimer ce paiement ?",
+        onValidated: () async {
+      Xloading.showLottieLoading(context);
+      await db
+          .update('factures', {'facture_statut': 'en cours'},
+              where: 'facture_id = ?', whereArgs: [data.operationFactureId])
+          .then((id) async {
+        await db.delete(
+          "operations",
+          where: "operation_facture_id=?",
+          whereArgs: [data.operationFactureId],
+        );
+        Xloading.dismiss();
+        XDialog.showMessage(context,
+            message: "Le paiement a été retiré avec succès !");
+        dataController.loadPayments("all");
+      });
+    }, onFailed: () {});
+  }
+
+  _searchPay(String kWord) async {
+    String statmentOp =
+        "operations.operation_id,operations.operation_libelle,operations.operation_type ,operations.operation_montant, operations.operation_devise, operations.operation_facture_id, operations.operation_mode, operations.operation_create_At";
+    String statmentFac =
+        "factures.facture_id, factures.facture_montant, factures.facture_devise, factures.facture_client_id, factures.facture_create_At, factures.facture_statut";
+    String statmentClient =
+        "clients.client_id, clients.client_nom,clients.client_tel, clients.client_adresse";
+    var query = await NativeDbHelper.rawQuery(
+      "SELECT $statmentOp,$statmentFac, $statmentClient, SUM(operations.operation_montant) AS totalPay FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND clients.client_nom LIKE '%$kWord%' GROUP BY operations.operation_facture_id",
+    );
+    dataController.paiements.clear();
+    query.forEach((e) {
+      dataController.paiements.add(Operations.fromMap(e));
+    });
   }
 }
