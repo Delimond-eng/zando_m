@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:zando_m/global/utils.dart';
 import 'package:zando_m/reports/models/daily_count.dart';
 import 'package:zando_m/reports/models/dashboard_count.dart';
+import 'package:zando_m/reports/models/month.dart';
 
 import '../services/db_helper.dart';
 
@@ -42,6 +43,17 @@ class Report {
     var db = await DbHelper.initDb();
     var query = await db.rawQuery(
         "SELECT SUM(operation_montant) AS daySum FROM operations WHERE operation_mode = '$mode' AND operation_create_At='$timesmp' AND NOT operation_state='deleted'");
+    return query.first["daySum"] ?? 0;
+  }
+
+  static Future<double> dayAll() async {
+    var date = DateTime.now();
+    var dateConverted = DateTime(date.year, date.month, date.day);
+    var ms = dateConverted.microsecondsSinceEpoch;
+    var timesmp = (ms / 1000).round();
+    var db = await DbHelper.initDb();
+    var query = await db.rawQuery(
+        "SELECT SUM(operation_montant) AS daySum FROM operations WHERE operation_create_At='$timesmp' AND NOT operation_state='deleted'");
     return query.first["daySum"] ?? 0;
   }
 
@@ -146,5 +158,33 @@ class Report {
       "SELECT SUM(operation_montant) AS lastAmount FROM operations INNER JOIN factures ON operations.operation_facture_id = factures.facture_id WHERE operations.operation_facture_id = $factureId",
     );
     return query.isEmpty ? null : query.first['lastAmount'];
+  }
+
+  //**get List of months**//
+  static Future<List<Month>> getMonths() async {
+    List<Month> data = <Month>[];
+    List<String> months = [
+      "Janv.",
+      "Fév.",
+      "Mars",
+      "Avril",
+      "Mai",
+      "Juin",
+      "Juil.",
+      "Août",
+      "Sept.",
+      "Oct.",
+      "Nov.",
+      "Déc.",
+    ];
+    var dateNow = DateTime.now();
+    for (int i = 0; i < months.length; i++) {
+      var m = months[i];
+      var t = Month(
+          label: m,
+          value: "${(i + 1).toString().padLeft(2, "0")}-${dateNow.year}");
+      data.add(t);
+    }
+    return data;
   }
 }

@@ -80,3 +80,5 @@ double convertDollarsToCdf(double dollars) {
   double cdf = dollars * tauxCDF;
   return cdf;
 }
+
+String lastChars(String s, int n) => s.substring(s.length - n);

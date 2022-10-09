@@ -1,13 +1,17 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:zando_m/global/controllers.dart';
+import 'package:zando_m/models/operation.dart';
 
 import '../../components/topbar.dart';
 import '../../widgets/costum_table.dart';
 import '../../widgets/round_icon_btn.dart';
+import 'facture_details_modal.dart';
 
-inventoryDetailsModal(BuildContext context) {
+inventoryDetailsModal(BuildContext context, {Operations data}) {
   showDialog(
     barrierColor: Colors.black12,
     context: context,
@@ -55,49 +59,59 @@ inventoryDetailsModal(BuildContext context) {
                   ),
                 ),
                 Expanded(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     children: [
-                      Expanded(
+                      Padding(
+                        padding: const EdgeInsets.all(10.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisAlignment: MainAxisAlignment.start,
                           children: [
-                            Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: Text(
-                                "Date : 20-12-22",
-                                style: GoogleFonts.didactGothic(
-                                  color: Colors.black,
-                                  fontSize: 18.0,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            Text(
+                              "Date : ${data.operationDate}",
+                              style: GoogleFonts.didactGothic(
+                                color: Colors.black,
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
-                            Expanded(
-                              child: ListView(
-                                padding: const EdgeInsets.all(10.0),
-                                children: [
-                                  CostumTable(
-                                    cols: const [
-                                      "N° Fac.",
-                                      "Date",
-                                      "Montant",
-                                      "Paiement",
-                                      "Reste",
-                                      "Mode",
-                                      "Status",
-                                      "Client",
-                                      ""
-                                    ],
-                                    data: _createRows(context),
-                                  ),
-                                ],
+                            const SizedBox(
+                              height: 5.0,
+                            ),
+                            Text(
+                              "Compte : ${data.compte.compteLibelle}",
+                              style: GoogleFonts.didactGothic(
+                                color: Colors.black,
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.w700,
                               ),
                             ),
                           ],
                         ),
+                      ),
+                      Expanded(
+                        child: Obx(() {
+                          return ListView(
+                            padding: const EdgeInsets.all(10.0),
+                            children: [
+                              CostumTable(
+                                cols: const [
+                                  "N° Fac.",
+                                  "Date",
+                                  "Montant",
+                                  "Paiement",
+                                  "Reste",
+                                  "Mode",
+                                  "Client",
+                                  ""
+                                ],
+                                data: _createRows(context),
+                              ),
+                            ],
+                          );
+                        }),
                       ),
                     ],
                   ),
@@ -112,45 +126,13 @@ inventoryDetailsModal(BuildContext context) {
 }
 
 List<DataRow> _createRows(BuildContext context) {
-  final List<Map> _factures = [
-    {
-      'id': 021,
-      'date': "02-03-22",
-      'montant': 3500,
-      "paie": 1500,
-      "rest": 2000,
-      "mode": "cash",
-      "status": "payé",
-      "client": "Gaston Delimond"
-    },
-    {
-      'id': 021,
-      'date': "02-03-22",
-      'montant': 3500,
-      "paie": 1500,
-      "rest": 2000,
-      "mode": "cash",
-      "status": "payé",
-      "client": "Gaston Delimond"
-    },
-    {
-      'id': 021,
-      'date': "02-03-22",
-      'montant': 3500,
-      "paie": 1500,
-      "rest": 2000,
-      "mode": "cash",
-      "status": "payé",
-      "client": "Gaston Delimond"
-    },
-  ];
-  return _factures
+  return dataController.paiements
       .map(
-        (book) => DataRow(
+        (p) => DataRow(
           cells: [
             DataCell(
               Text(
-                book['id'].toString(),
+                p.operationFactureId.toString().padLeft(2, "0"),
                 style: GoogleFonts.didactGothic(
                   fontWeight: FontWeight.w600,
                 ),
@@ -158,7 +140,7 @@ List<DataRow> _createRows(BuildContext context) {
             ),
             DataCell(
               Text(
-                book['date'].toString(),
+                p.operationDate,
                 style: GoogleFonts.didactGothic(
                   fontWeight: FontWeight.w600,
                 ),
@@ -166,7 +148,7 @@ List<DataRow> _createRows(BuildContext context) {
             ),
             DataCell(
               Text(
-                book['montant'].toString(),
+                p.facture.factureMontant,
                 style: GoogleFonts.didactGothic(
                   fontWeight: FontWeight.w600,
                 ),
@@ -174,7 +156,7 @@ List<DataRow> _createRows(BuildContext context) {
             ),
             DataCell(
               Text(
-                book['paie'].toString(),
+                p.totalPayment.toStringAsFixed(2),
                 style: GoogleFonts.didactGothic(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -183,7 +165,7 @@ List<DataRow> _createRows(BuildContext context) {
             ),
             DataCell(
               Text(
-                book['rest'].toString(),
+                '${(double.parse(p.facture.factureMontant) - (p.totalPayment))}',
                 style: GoogleFonts.didactGothic(
                   fontWeight: FontWeight.w600,
                 ),
@@ -191,32 +173,15 @@ List<DataRow> _createRows(BuildContext context) {
             ),
             DataCell(
               Text(
-                book['mode'].toString(),
+                p.operationMode,
                 style: GoogleFonts.didactGothic(
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
             DataCell(
-              Container(
-                padding: const EdgeInsets.all(5.0),
-                decoration: BoxDecoration(
-                  color: Colors.green[200],
-                  borderRadius: BorderRadius.circular(3.0),
-                ),
-                child: Text(
-                  book['status'].toString(),
-                  style: GoogleFonts.didactGothic(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 10.0,
-                    color: Colors.green[700],
-                  ),
-                ),
-              ),
-            ),
-            DataCell(
               Text(
-                book['client'].toString(),
+                p.clientNom,
                 style: GoogleFonts.didactGothic(
                   fontWeight: FontWeight.w600,
                 ),
@@ -240,7 +205,8 @@ List<DataRow> _createRows(BuildContext context) {
                       ),
                     ),
                     onPressed: () {
-                      //factureDetailsModal(context);
+                      Get.back();
+                      factureDetailsModal(context, p.facture);
                     },
                   ),
                 ],

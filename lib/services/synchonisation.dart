@@ -3,8 +3,8 @@ import 'dart:io';
 
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
+import 'package:zando_m/global/controllers.dart';
 
-import '../global/controllers.dart';
 import '../models/sync_model.dart';
 import 'db_helper.dart';
 
@@ -17,33 +17,48 @@ class Synchroniser {
       if (users.isNotEmpty) {
         send({"users": users});
       }
-      var clients = await db
-          .query("clients", where: "client_state=?", whereArgs: ["allowed"]);
+      var clients = await db.query("clients");
       if (clients.isNotEmpty) {
         await send({"clients": clients});
+        await db.delete("clients",
+            where: "client_state= ?", whereArgs: ["deleted"]);
       }
-      var factures = await db
-          .query("factures", where: "facture_state=?", whereArgs: ["allowed"]);
+      var factures = await db.query("factures");
       if (factures.isNotEmpty) {
         await send({"factures": factures});
+        await db.delete("factures",
+            where: "facture_state= ?", whereArgs: ["deleted"]);
       }
       try {
-        var factureDetails = await db.query("facture_details",
-            where: "facture_detail_state = ?", whereArgs: ["allowed"]);
+        var factureDetails = await db.query("facture_details");
         if (factureDetails.isNotEmpty) {
           await send({"facture_details": factureDetails});
+          await db.delete("facture_details",
+              where: "facture_detail_state = ?", whereArgs: ["deleted"]);
         }
       } catch (err) {}
 
       try {
-        var comptes = await db
-            .query("comptes", where: "compte_state=?", whereArgs: ["allowed"]);
+        var comptes = await db.query("comptes");
         if (comptes.isNotEmpty) {
-          send({"comptes": comptes});
+          await send({"comptes": comptes});
+          await db.delete("comptes",
+              where: "compte_state = ?", whereArgs: ["deleted"]);
         }
       } catch (e) {}
 
       try {
+        var operations = await db.query("operations");
+        if (operations.isNotEmpty) {
+          await send({"operations": operations});
+          await db.delete("operations",
+              where: "operation_state= ?", whereArgs: ["deleted"]);
+        }
+      } catch (err) {}
+
+      await dataController.syncData();
+
+      /*try {
         var articles = await db.query("articles",
             where: "article_state=?", whereArgs: ["allowed"]);
         if (articles.isNotEmpty) {
@@ -65,14 +80,7 @@ class Synchroniser {
           await send({"mouvements": mouvements});
         }
       } catch (err) {}
-      try {
-        var operations = await db.query("operations",
-            where: "operation_state=?", whereArgs: ["allowed"]);
-        if (operations.isNotEmpty) {
-          await send({"operations": operations});
-        }
-      } catch (err) {}
-      await dataController.refreshDatas();
+      */
     } catch (e) {}
   }
 

@@ -16,11 +16,9 @@ import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
 import '../widgets/filter_btn.dart';
 import '../widgets/search_input.dart';
-import 'modals/payModal.dart';
 
 class Paiements extends StatefulWidget {
   const Paiements({Key key}) : super(key: key);
-
   @override
   State<Paiements> createState() => _PaiementsState();
 }
@@ -88,6 +86,7 @@ class _PaiementsState extends State<Paiements> {
                   children: [
                     CostumTable(
                       cols: const [
+                        "N° Fac",
                         "Date",
                         "Montant",
                         "Paiement",
@@ -130,7 +129,7 @@ class _PaiementsState extends State<Paiements> {
                         if (e['keyw'] == "date") {
                           var date = await showDatePicked(context);
                           if (date != null) {
-                            dataController.loadPayments("date", date: date);
+                            dataController.loadPayments("date", field: date);
                             setter(() {
                               _selectedFilterKeyword = e['keyw'];
                             });
@@ -172,6 +171,14 @@ class _PaiementsState extends State<Paiements> {
             cells: [
               DataCell(
                 Text(
+                  data.operationFactureId.toString().padLeft(2, "0"),
+                  style: GoogleFonts.didactGothic(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
                   data.operationDate,
                   style: GoogleFonts.didactGothic(
                     fontWeight: FontWeight.w600,
@@ -180,7 +187,7 @@ class _PaiementsState extends State<Paiements> {
               ),
               DataCell(
                 Text(
-                  '${data.facture.factureMontant} ${data.operationDevise}',
+                  data.facture.factureMontant,
                   style: GoogleFonts.didactGothic(
                     fontWeight: FontWeight.w600,
                   ),
@@ -188,7 +195,7 @@ class _PaiementsState extends State<Paiements> {
               ),
               DataCell(
                 Text(
-                  '${data.totalPayment.toString()} ${data.operationDevise}',
+                  data.totalPayment.toString(),
                   style: GoogleFonts.didactGothic(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -263,25 +270,6 @@ class _PaiementsState extends State<Paiements> {
                         _scaffoldKey.currentState.openEndDrawer();
                       },
                     ),
-                    const SizedBox(
-                      width: 8.0,
-                    ),
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.pink,
-                        elevation: 2,
-                        padding: const EdgeInsets.all(8.0),
-                      ),
-                      child: Text(
-                        "Supprimer",
-                        style: GoogleFonts.didactGothic(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          fontSize: 12.0,
-                        ),
-                      ),
-                      onPressed: () => _deleteOperation(data),
-                    ),
                   ],
                 ),
               )
@@ -315,14 +303,8 @@ class _PaiementsState extends State<Paiements> {
   }
 
   _searchPay(String kWord) async {
-    String statmentOp =
-        "operations.operation_id,operations.operation_libelle,operations.operation_type ,operations.operation_montant, operations.operation_devise, operations.operation_facture_id, operations.operation_mode, operations.operation_create_At";
-    String statmentFac =
-        "factures.facture_id, factures.facture_montant, factures.facture_devise, factures.facture_client_id, factures.facture_create_At, factures.facture_statut";
-    String statmentClient =
-        "clients.client_id, clients.client_nom,clients.client_tel, clients.client_adresse";
     var query = await NativeDbHelper.rawQuery(
-      "SELECT $statmentOp,$statmentFac, $statmentClient, SUM(operations.operation_montant) AS totalPay FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND clients.client_nom LIKE '%$kWord%' GROUP BY operations.operation_facture_id",
+      "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND clients.client_nom LIKE '%$kWord%' GROUP BY operations.operation_facture_id",
     );
     dataController.paiements.clear();
     query.forEach((e) {

@@ -1,14 +1,21 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:zando_m/pages/modals/inventory_details_modal.dart';
-import 'package:zando_m/widgets/filter_drop.dart';
+import 'package:zando_m/global/controllers.dart';
+import 'package:zando_m/global/utils.dart';
+import 'package:zando_m/models/compte.dart';
+import 'package:zando_m/reports/models/month.dart';
+import 'package:zando_m/reports/report.dart';
+import 'package:zando_m/utilities/modals.dart';
+import 'package:zando_m/widgets/empty_table.dart';
 
 import '../responsive/base_widget.dart';
 import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
 import '../widgets/filter_btn.dart';
+import 'modals/inventory_details_modal.dart';
 
 class Inventories extends StatefulWidget {
   const Inventories({Key key}) : super(key: key);
@@ -18,9 +25,48 @@ class Inventories extends StatefulWidget {
 }
 
 class _InventoriesState extends State<Inventories> {
-  final ScrollController hScrollController = ScrollController();
-  final ScrollController vScrollController = ScrollController();
-  bool viewCategories = false;
+  List<Month> months = <Month>[];
+
+  double _entrees = 0.0;
+  double _sorties = 0.0;
+
+  double get _solde => _entrees - _sorties;
+
+  @override
+  void initState() {
+    super.initState();
+    initData();
+    dataController.loadAllComptes();
+    dataController.loadInventories("all");
+    initTot();
+  }
+
+  initData() async {
+    var m = await Report.getMonths();
+    months.clear();
+    months.addAll(m);
+    setState(() {});
+  }
+
+  initTot() {
+    double en = 0;
+    double so = 0;
+    Future.delayed(const Duration(milliseconds: 500), () {
+      setState(() {
+        for (var e in dataController.inventories) {
+          if (e.operationType == 'entrée') {
+            en += e.totalPayment;
+          }
+          if (e.operationType == 'sortie') {
+            so += e.totalPayment;
+          }
+        }
+        _entrees = en;
+        _sorties = so;
+      });
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,23 +86,25 @@ class _InventoriesState extends State<Inventories> {
                       _inventoriesFilters(context),
                       Expanded(
                         child: FadeInUp(
-                          child: ListView(
-                            padding: const EdgeInsets.all(10.0),
-                            children: [
-                              CostumTable(
-                                cols: const [
-                                  "Date",
-                                  "Entrées",
-                                  "Sorties",
-                                  "Solde",
-                                  "Compte",
-                                  "Status",
-                                  ""
-                                ],
-                                data: _createRows(),
-                              ),
-                            ],
-                          ),
+                          child: Obx(() {
+                            return dataController.inventories.isEmpty
+                                ? const EmptyTable()
+                                : ListView(
+                                    padding: const EdgeInsets.all(10.0),
+                                    children: [
+                                      CostumTable(
+                                        cols: const [
+                                          "Date",
+                                          "Montant",
+                                          "Compte",
+                                          "Status compte",
+                                          ""
+                                        ],
+                                        data: _createRows(),
+                                      ),
+                                    ],
+                                  );
+                          }),
                         ),
                       ),
                       _rightSide(context),
@@ -69,6 +117,92 @@ class _InventoriesState extends State<Inventories> {
         }),
       ),
     );
+  }
+
+  List<DataRow> _createRows() {
+    return dataController.inventories
+        .map(
+          (e) => DataRow(
+            cells: [
+              DataCell(
+                Text(
+                  e.operationDate,
+                  style: GoogleFonts.didactGothic(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  '${e.totalPayment.toStringAsFixed(2)} ${e.operationDevise}',
+                  style: GoogleFonts.didactGothic(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              DataCell(
+                Text(
+                  e.compte.compteLibelle,
+                  style: GoogleFonts.didactGothic(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              DataCell(
+                Container(
+                  padding: const EdgeInsets.all(5.0),
+                  decoration: BoxDecoration(
+                    color: (e.compte.compteStatus == "actif")
+                        ? Colors.green[200]
+                        : Colors.red[100],
+                    borderRadius: BorderRadius.circular(3.0),
+                  ),
+                  child: Text(
+                    e.compte.compteStatus,
+                    style: GoogleFonts.didactGothic(
+                      fontWeight: FontWeight.w600,
+                      fontSize: 10.0,
+                      color: (e.compte.compteStatus == "actif")
+                          ? Colors.green[700]
+                          : Colors.red[700],
+                    ),
+                  ),
+                ),
+              ),
+              DataCell(
+                Row(
+                  children: [
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        elevation: 2,
+                        padding: const EdgeInsets.all(8.0),
+                      ),
+                      child: Text(
+                        "Voir détals",
+                        style: GoogleFonts.didactGothic(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 12.0,
+                        ),
+                      ),
+                      onPressed: () async {
+                        await dataController.loadPayments("details",
+                            field: e.operationCompteId);
+                        inventoryDetailsModal(context, data: e);
+                      },
+                    ),
+                    const SizedBox(
+                      width: 5.0,
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
+        )
+        .toList();
   }
 
   Widget _rightSide(BuildContext context) {
@@ -133,7 +267,7 @@ class _InventoriesState extends State<Inventories> {
                 children: [
                   Flexible(
                     child: SyntheseInfo(
-                      amount: 300.0,
+                      amount: _entrees,
                       currency: "USD",
                       title: "Total des entrées",
                       icon: CupertinoIcons.up_arrow,
@@ -141,19 +275,19 @@ class _InventoriesState extends State<Inventories> {
                       titleColor: Colors.green[700],
                     ),
                   ),
-                  const Flexible(
+                  Flexible(
                     child: SyntheseInfo(
-                      amount: 0.0,
+                      amount: _sorties,
                       currency: "USD",
-                      title: "Total des sortie",
+                      title: "Total des sorties",
                       titleColor: Colors.red,
                       icon: CupertinoIcons.down_arrow,
                       thikness: .1,
                     ),
                   ),
-                  const Flexible(
+                  Flexible(
                     child: SyntheseInfo(
-                      amount: 300.0,
+                      amount: _solde,
                       currency: "USD",
                       title: "Solde",
                       titleColor: Colors.indigo,
@@ -170,6 +304,7 @@ class _InventoriesState extends State<Inventories> {
     );
   }
 
+  var fWord = "all";
   Widget _inventoriesFilters(BuildContext context) {
     return FadeInUp(
       child: Row(
@@ -212,54 +347,56 @@ class _InventoriesState extends State<Inventories> {
                     const SizedBox(
                       width: 8.0,
                     ),
-                    const FilterBtn(
+                    FilterBtn(
                       width: 80.0,
                       icon: Icons.filter_alt_rounded,
                       title: "Tous",
-                      isSelected: true,
+                      isSelected: fWord == "all",
+                      onPressed: () async {
+                        setState(() => fWord = "all");
+                        Xloading.showLottieLoading(context);
+                        await dataController.loadInventories("all");
+                        initTot();
+                        emptyCo();
+                        emptyMo();
+                        Xloading.dismiss();
+                      },
                     ),
                     const SizedBox(
                       width: 8.0,
                     ),
-                    const FilterBtn(
+                    FilterBtn(
                       icon: Icons.filter_list_sharp,
                       title: "Date",
-                      width: 120.0,
-                    ),
-                    const SizedBox(
-                      width: 8.0,
-                    ),
-                    FilterDrop(
-                      icon: Icons.filter_list_sharp,
-                      data: const [
-                        "Janvier",
-                        "Février",
-                        "Mars",
-                        "Avril",
-                        "Mai",
-                        "Juin",
-                        "..."
-                      ],
-                      hintText: "Mois",
-                      onChanged: (value) {
-                        debugPrint(value);
+                      width: 130.0,
+                      isSelected: fWord == "date",
+                      onPressed: () async {
+                        var date = await showDatePicked(context);
+                        if (date != null) {
+                          Xloading.showLottieLoading(context);
+                          var strDate =
+                              dateToString(parseTimestampToDate(date));
+                          await dataController.loadInventories("all");
+                          await dataController.loadInventories("date",
+                              fkey: strDate);
+                          initTot();
+                          setState(() => fWord = "date");
+                          emptyCo();
+                          emptyMo();
+                          Xloading.dismiss();
+                        }
                       },
                     ),
                     const SizedBox(
                       width: 8.0,
                     ),
-                    FilterDrop(
-                      icon: Icons.filter_list_sharp,
-                      data: const [
-                        "Caisse",
-                        "MPesa",
-                        "Airtel money",
-                        "Orange money",
-                      ],
-                      hintText: "Compte",
-                      onChanged: (value) {
-                        debugPrint(value);
-                      },
+                    _dropdowMonth(),
+                    const SizedBox(
+                      width: 8.0,
+                    ),
+                    _dropdowCompte(),
+                    const SizedBox(
+                      width: 8.0,
                     ),
                   ],
                 ),
@@ -271,131 +408,181 @@ class _InventoriesState extends State<Inventories> {
     );
   }
 
-  final List<Map> _inventories = [
-    {
-      'date': "02-03-22",
-      "entree": 1500,
-      "sortie": "0",
-      "compte": "Caisse",
-      "status": "actif",
-    },
-    {
-      'date': "02-03-22",
-      "entree": 1500,
-      "sortie": "0",
-      "compte": "Caisse",
-      "status": "actif",
-    },
-    {
-      'date': "02-03-22",
-      "entree": 1500,
-      "sortie": "0",
-      "compte": "Caisse",
-      "status": "actif",
-    },
-    {
-      'date': "02-03-22",
-      "entree": 1500,
-      "sortie": "0",
-      "compte": "Caisse",
-      "status": "actif",
-    },
-  ];
+  Month selectedMonth;
 
-  List<DataRow> _createRows() {
-    return _inventories
-        .map(
-          (book) => DataRow(
-            cells: [
-              DataCell(
-                Text(
-                  book['date'].toString(),
+  emptyMo({Month o}) {
+    setState(() {
+      selectedMonth = o;
+    });
+  }
+
+  Widget _dropdowMonth() {
+    return Container(
+      width: 140.0,
+      height: 40.0,
+      decoration: BoxDecoration(
+        color: selectedMonth != null ? Colors.indigo[400] : Colors.transparent,
+        borderRadius: BorderRadius.circular(4.0),
+        border: Border.all(
+          width: 1.5,
+          color: Colors.indigo,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+        child: StatefulBuilder(builder: (context, setter) {
+          return Row(
+            children: [
+              Icon(
+                Icons.filter_list_sharp,
+                size: 15.0,
+                color: selectedMonth != null ? Colors.white : Colors.indigo,
+              ),
+              const SizedBox(
+                width: 5.0,
+              ),
+              Flexible(
+                child: DropdownButton<Month>(
+                  menuMaxHeight: 200,
+                  dropdownColor: Colors.white,
+                  alignment: Alignment.centerLeft,
+                  iconEnabledColor:
+                      selectedMonth != null ? Colors.white : Colors.grey[600],
+                  borderRadius: BorderRadius.circular(5.0),
                   style: GoogleFonts.didactGothic(
+                    color: Colors.black,
                     fontWeight: FontWeight.w600,
                   ),
-                ),
-              ),
-              DataCell(
-                Text(
-                  book['entree'].toString(),
-                  style: GoogleFonts.didactGothic(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              DataCell(
-                Text(
-                  book['sortie'].toString(),
-                  style: GoogleFonts.didactGothic(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              DataCell(
-                Text(
-                  "1500",
-                  style: GoogleFonts.didactGothic(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              DataCell(
-                Text(
-                  book['compte'].toString(),
-                  style: GoogleFonts.didactGothic(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-              DataCell(
-                Container(
-                  padding: const EdgeInsets.all(5.0),
-                  decoration: BoxDecoration(
-                    color: Colors.green[200],
-                    borderRadius: BorderRadius.circular(3.0),
-                  ),
-                  child: Text(
-                    book['status'].toString(),
+                  value: selectedMonth,
+                  underline: const SizedBox(),
+                  hint: Text(
+                    "Mois",
                     style: GoogleFonts.didactGothic(
+                      color: Colors.indigo,
                       fontWeight: FontWeight.w600,
-                      fontSize: 10.0,
-                      color: Colors.green[700],
                     ),
                   ),
-                ),
-              ),
-              DataCell(
-                Row(
-                  children: [
-                    TextButton(
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        elevation: 2,
-                        padding: const EdgeInsets.all(8.0),
-                      ),
+                  isExpanded: true,
+                  items: months.map((e) {
+                    return DropdownMenuItem<Month>(
+                      value: e,
                       child: Text(
-                        "Voir détals",
+                        e.label,
                         style: GoogleFonts.didactGothic(
                           fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          fontSize: 12.0,
+                          fontSize: 16.0,
+                          color: Colors.grey[800],
                         ),
                       ),
-                      onPressed: () {
-                        inventoryDetailsModal(context);
-                      },
-                    ),
-                    const SizedBox(
-                      width: 5.0,
-                    ),
-                  ],
+                    );
+                  }).toList(),
+                  onChanged: (m) async {
+                    setter(() {
+                      selectedMonth = m;
+                    });
+                    await dataController.loadInventories("all");
+                    await dataController.loadInventories("mois", fkey: m.value);
+                    setState(() {
+                      fWord = "mois";
+                    });
+                    emptyCo();
+                    initTot();
+                  },
                 ),
-              )
+              ),
             ],
-          ),
-        )
-        .toList();
+          );
+        }),
+      ),
+    );
+  }
+
+  Compte selectedCompte;
+  emptyCo({Compte c}) {
+    setState(() {
+      selectedCompte = c;
+    });
+  }
+
+  Widget _dropdowCompte() {
+    return Container(
+      width: 140.0,
+      height: 40.0,
+      decoration: BoxDecoration(
+        color: selectedCompte != null ? Colors.indigo[400] : Colors.transparent,
+        borderRadius: BorderRadius.circular(4.0),
+        border: Border.all(
+          width: 1.5,
+          color: Colors.indigo,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+        child: StatefulBuilder(builder: (context, setter) {
+          return Row(
+            children: [
+              Icon(
+                Icons.filter_list_sharp,
+                size: 15.0,
+                color: selectedCompte != null ? Colors.white : Colors.indigo,
+              ),
+              const SizedBox(
+                width: 5.0,
+              ),
+              Flexible(
+                child: DropdownButton<Compte>(
+                  menuMaxHeight: 200,
+                  dropdownColor: Colors.white,
+                  alignment: Alignment.centerLeft,
+                  iconEnabledColor:
+                      selectedCompte != null ? Colors.white : Colors.grey[600],
+                  borderRadius: BorderRadius.circular(5.0),
+                  style: GoogleFonts.didactGothic(
+                    color: Colors.black,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  value: selectedCompte,
+                  underline: const SizedBox(),
+                  hint: Text(
+                    "Compte",
+                    style: GoogleFonts.didactGothic(
+                      color: Colors.indigo,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  isExpanded: true,
+                  items: dataController.allComptes.map((e) {
+                    return DropdownMenuItem<Compte>(
+                      value: e,
+                      child: Text(
+                        e.compteLibelle,
+                        style: GoogleFonts.didactGothic(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16.0,
+                          color: Colors.grey[800],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (c) async {
+                    setter(() {
+                      selectedCompte = c;
+                    });
+                    await dataController.loadInventories("compte",
+                        fkey: c.compteId);
+                    setState(() {
+                      fWord = "compte";
+                    });
+                    initTot();
+                    emptyMo();
+                  },
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
   }
 }
 

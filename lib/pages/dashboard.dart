@@ -30,8 +30,9 @@ class _DashBoardState extends State<DashBoard> {
   @override
   void initState() {
     super.initState();
-    dataController.loadFacturesEnAttente();
+    dataController.countDaySum();
     dataController.refreshDashboardCounts();
+    dataController.loadFacturesEnAttente();
   }
 
   @override
@@ -162,28 +163,31 @@ class _DashBoardState extends State<DashBoard> {
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: "150",
-                                style: GoogleFonts.staatliches(
-                                  color: Colors.black,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 25.0,
+                        Obx(() {
+                          return RichText(
+                            text: TextSpan(
+                              children: [
+                                TextSpan(
+                                  text: dataController.daySellCount.value
+                                      .toStringAsFixed(2),
+                                  style: GoogleFonts.staatliches(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w800,
+                                    fontSize: 25.0,
+                                  ),
                                 ),
-                              ),
-                              TextSpan(
-                                text: " USD",
-                                style: GoogleFonts.didactGothic(
-                                  color: Colors.blue,
-                                  fontSize: 15.0,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              )
-                            ],
-                          ),
-                        )
+                                TextSpan(
+                                  text: " USD",
+                                  style: GoogleFonts.didactGothic(
+                                    color: Colors.blue,
+                                    fontSize: 15.0,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                )
+                              ],
+                            ),
+                          );
+                        })
                       ],
                     ),
                     ElevatedButton.icon(

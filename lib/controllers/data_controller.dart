@@ -3,6 +3,7 @@ import 'package:zando_m/models/operation.dart';
 import 'package:zando_m/reports/models/daily_count.dart';
 import 'package:zando_m/reports/report.dart';
 
+import '../global/utils.dart';
 import '../models/client.dart';
 import '../models/compte.dart';
 import '../models/currency.dart';
@@ -27,6 +28,8 @@ class DataController extends GetxController {
   var dailySums = <DailyCount>[].obs;
   var paiements = <Operations>[].obs;
   var paiementDetails = <Operations>[].obs;
+  var inventories = <Operations>[].obs;
+  var daySellCount = 0.0.obs;
 
   @override
   void onInit() {
@@ -37,8 +40,10 @@ class DataController extends GetxController {
   Future<void> refreshDatas() async {
     refreshCurrency();
     loadActivatedComptes();
+    loadFacturesEnAttente();
   }
 
+  //* Load all users list*//
   loadUsers() async {
     var db = await DbHelper.initDb();
     var userData = await db.query("users");
@@ -98,6 +103,11 @@ class DataController extends GetxController {
     }
   }
 
+  countDaySum() async {
+    var s = await Report.dayAll();
+    daySellCount.value = s;
+  }
+
   loadFacturesEnAttente() async {
     try {
       var allFactures = await NativeDbHelper.rawQuery(
@@ -124,30 +134,41 @@ class DataController extends GetxController {
     } catch (e) {}
   }
 
-  loadPayments(String key, {int date}) async {
-    String statmentOp =
-        "operations.operation_id,operations.operation_libelle,operations.operation_type ,operations.operation_montant, operations.operation_devise, operations.operation_facture_id, operations.operation_mode, operations.operation_create_At";
-    String statmentFac =
-        "factures.facture_id, factures.facture_montant, factures.facture_devise, factures.facture_client_id, factures.facture_create_At, factures.facture_statut";
-    String statmentClient =
-        "clients.client_id, clients.client_nom,clients.client_tel, clients.client_adresse";
-    var query;
+  loadPayments(String key, {int field}) async {
     switch (key) {
       case "all":
-        query = await NativeDbHelper.rawQuery(
-          "SELECT $statmentOp,$statmentFac, $statmentClient, SUM(operations.operation_montant) AS totalPay FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id",
+        var query = await NativeDbHelper.rawQuery(
+          "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
         );
+        paiements.clear();
+        query.forEach((e) {
+          paiements.add(Operations.fromMap(e));
+        });
+        break;
+      case "details":
+        var query = await NativeDbHelper.rawQuery(
+          "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND operations.operation_compte_id = $field GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
+        );
+        paiements.clear();
+        query.forEach((e) {
+          paiements.add(Operations.fromMap(e));
+        });
         break;
       case "date":
-        query = await NativeDbHelper.rawQuery(
-          "SELECT $statmentOp,$statmentFac, $statmentClient, SUM(operations.operation_montant) AS totalPay FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND operations.operation_create_At = $date  GROUP BY operations.operation_facture_id",
+        var query = await NativeDbHelper.rawQuery(
+          "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_facture_id ORDER BY operations.operation_facture_id DESC",
         );
+        paiements.clear();
+        query.forEach((e) {
+          paiements.add(Operations.fromMap(e));
+        });
+        var strDate = dateToString(parseTimestampToDate(field));
+        var p =
+            paiements.where((e) => e.operationDate.contains(strDate)).toList();
+        paiements.clear();
+        paiements.addAll(p);
         break;
     }
-    paiements.clear();
-    query.forEach((e) {
-      paiements.add(Operations.fromMap(e));
-    });
   }
 
   showPaiementDetails(int factureId) async {
@@ -157,6 +178,50 @@ class DataController extends GetxController {
     query.forEach((e) {
       paiementDetails.add(Operations.fromMap(e));
     });
+  }
+
+  loadInventories(String fword, {fkey}) async {
+    try {
+      switch (fword) {
+        case "all":
+          var query = await NativeDbHelper.rawQuery(
+              "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' GROUP BY operations.operation_create_At,operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
+          inventories.clear();
+          query.forEach((e) {
+            inventories.add(Operations.fromMap(e));
+          });
+          break;
+        case "compte":
+          var query = await NativeDbHelper.rawQuery(
+              "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' AND operations.operation_compte_id = $fkey GROUP BY operations.operation_create_At, operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
+          inventories.clear();
+          query.forEach((e) {
+            inventories.add(Operations.fromMap(e));
+          });
+          break;
+        case "type":
+          var query = await NativeDbHelper.rawQuery(
+              "SELECT SUM(operations.operation_montant) AS totalPay, * FROM operations INNER JOIN comptes on operations.operation_compte_id = comptes.compte_id WHERE NOT operations.operation_state='deleted' AND operations.operation_type = '$fkey' GROUP BY operations.operation_create_At , operations.operation_compte_id ORDER BY operations.operation_create_At DESC");
+          inventories.clear();
+          query.forEach((e) {
+            inventories.add(Operations.fromMap(e));
+          });
+          break;
+        case "date":
+          var ies =
+              inventories.where((e) => e.operationDate.contains(fkey)).toList();
+          inventories.clear();
+          inventories.addAll(ies);
+          break;
+        case "mois":
+          var ies = inventories
+              .where((e) => lastChars(e.operationDate, 7).contains(fkey))
+              .toList();
+          inventories.clear();
+          inventories.addAll(ies);
+          break;
+      }
+    } catch (e) {}
   }
 
   loadActivatedComptes() async {
@@ -209,32 +274,11 @@ class DataController extends GetxController {
     } catch (e) {}
   }
 
-  deleteUnavailableData() async {
-    var db = await DbHelper.initDb();
-    try {
-      await db.transaction((txn) async {
-        await txn
-            .rawDelete("DELETE FROM clients WHERE client_state=?", ['deleted']);
-        await txn
-            .rawDelete("DELETE FROM comptes WHERE compte_state=?", ['deleted']);
-        await txn.rawDelete(
-            "DELETE FROM factures WHERE facture_state=?", ['deleted']);
-        await txn.rawDelete(
-            "DELETE FROM facture_details WHERE facture_detail_state=?",
-            ['deleted']);
-        await txn.rawDelete(
-            "DELETE FROM operations WHERE operation_state=?", ['deleted']);
-      });
-    } catch (err) {}
-  }
-
   syncData() async {
     var db = await DbHelper.initDb();
-    await deleteUnavailableData();
     var syncDatas = await Synchroniser.outPutData();
     try {
       if (syncDatas.users.isNotEmpty) {
-        print("users: ${syncDatas.users.length}");
         for (var user in syncDatas.users) {
           var check = await db.rawQuery(
             "SELECT * FROM users WHERE user_id = ?",
@@ -253,7 +297,6 @@ class DataController extends GetxController {
         }
       }
       if (syncDatas.clients.isNotEmpty) {
-        print("clients : ${syncDatas.clients.length}");
         try {
           for (var client in syncDatas.clients) {
             if (client.clientState == "allowed") {
@@ -272,22 +315,19 @@ class DataController extends GetxController {
         } catch (err) {}
       }
       if (syncDatas.factures.isNotEmpty) {
-        print("factures : ${syncDatas.factures.length}");
         try {
           for (var facture in syncDatas.factures) {
             if (facture.factureState == "allowed") {
-              var check = await db.rawQuery(
-                "SELECT * FROM factures WHERE facture_id = ?",
-                [facture.factureId],
+              var check = await db.query(
+                "factures",
+                where: "facture_id= ?",
+                whereArgs: [facture.factureId],
               );
               if (check.isEmpty) {
                 await db.insert("factures", facture.toMap());
               } else {
                 Get.back();
               }
-            } else {
-              await db.delete("factures",
-                  where: "facture_id = ?", whereArgs: [facture.factureId]);
             }
           }
         } catch (e) {
@@ -308,16 +348,11 @@ class DataController extends GetxController {
               } else {
                 Get.back();
               }
-            } else {
-              await db.delete("facture_details",
-                  where: "facture_detail_id = ?",
-                  whereArgs: [detail.factureDetailId]);
             }
           }
         } catch (e) {}
       }
       if (syncDatas.operations.isNotEmpty) {
-        print("operations : ${syncDatas.operations.length}");
         try {
           for (var operation in syncDatas.operations) {
             if (operation.operationState == "allowed") {
@@ -328,16 +363,11 @@ class DataController extends GetxController {
               if (check.isEmpty) {
                 await db.insert("operations", operation.toMap());
               }
-            } else {
-              await db.delete("operations",
-                  where: "operation_id = ?",
-                  whereArgs: [operation.operationId]);
             }
           }
         } catch (e) {}
       }
       if (syncDatas.comptes.isNotEmpty) {
-        print("comptes : ${syncDatas.comptes.length}");
         try {
           for (var compte in syncDatas.comptes) {
             if (compte.compteState == "allowed") {
@@ -355,9 +385,6 @@ class DataController extends GetxController {
                   whereArgs: [compte.compteId],
                 );
               }
-            } else {
-              await db.delete("comptes",
-                  where: "compte_id = ?", whereArgs: [compte.compteId]);
             }
           }
         } catch (e) {}
