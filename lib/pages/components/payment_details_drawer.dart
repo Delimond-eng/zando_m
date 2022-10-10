@@ -138,7 +138,10 @@ class PaymentDetailsDrawer extends StatelessWidget {
                   children: [
                     TextButton(
                       style: TextButton.styleFrom(
-                        backgroundColor: Colors.pink,
+                        backgroundColor:
+                            authController.loggedUser.value.userRole == "admin"
+                                ? Colors.pink
+                                : Colors.grey[600],
                         elevation: 2,
                         padding: const EdgeInsets.all(8.0),
                       ),
@@ -150,7 +153,10 @@ class PaymentDetailsDrawer extends StatelessWidget {
                           fontSize: 12.0,
                         ),
                       ),
-                      onPressed: () => _deleteOperation(context, data),
+                      onPressed:
+                          authController.loggedUser.value.userRole == "admin"
+                              ? _deleteOperation(context, data)
+                              : null,
                     ),
                   ],
                 ),
@@ -171,8 +177,9 @@ class PaymentDetailsDrawer extends StatelessWidget {
           .update('factures', {'facture_statut': 'en cours'},
               where: 'facture_id = ?', whereArgs: [data.operationFactureId])
           .then((id) async {
-        await db.delete(
+        await db.update(
           "operations",
+          {"operation_state": "deleted"},
           where: "operation_id=?",
           whereArgs: [data.operationId],
         );

@@ -11,6 +11,7 @@ import 'db_helper.dart';
 class Synchroniser {
   static const String baseURL = "http://z-database.rtgroup-rdc.com";
   static Future inPutData() async {
+    authController.isSyncIn.value = true;
     var db = await DbHelper.initDb();
     try {
       var users = await db.query("users");
@@ -56,7 +57,9 @@ class Synchroniser {
         }
       } catch (err) {}
 
-      await dataController.syncData();
+      await dataController.syncData().then((value) {
+        authController.isSyncIn.value = false;
+      });
 
       /*try {
         var articles = await db.query("articles",
@@ -81,7 +84,10 @@ class Synchroniser {
         }
       } catch (err) {}
       */
-    } catch (e) {}
+    } catch (e) {
+      print(e);
+    }
+    return "end";
   }
 
   static Future<SyncModel> outPutData() async {

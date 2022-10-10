@@ -60,8 +60,10 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
         Xloading.showLottieLoading(
           _key.currentContext,
         );
-        await dataController.syncData();
-        Xloading.dismiss();
+        await dataController.syncUserData().then((res) {
+          debugPrint(res.toString());
+          Xloading.dismiss();
+        });
       });
     }
   }
@@ -101,10 +103,11 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
                           ZoomIn(
                             child: Container(
                               margin: EdgeInsets.symmetric(
-                                  horizontal: screenSize.deviceScreenType ==
-                                          DeviceScreenType.Mobile
-                                      ? 10.0
-                                      : 0.0),
+                                horizontal: screenSize.deviceScreenType ==
+                                        DeviceScreenType.Mobile
+                                    ? 10.0
+                                    : 0.0,
+                              ),
                               padding: const EdgeInsets.all(15.0),
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
@@ -214,13 +217,15 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
           await dataController.editCurrency();
           await dataController.refreshDatas();
           navigatorController.activeItem.value = "/";
-          Future.delayed(const Duration(seconds: 1), () {
+          Future.delayed(const Duration(milliseconds: 100), () async {
             Xloading.dismiss();
+
             Navigator.pushAndRemoveUntil(
               context,
               MaterialPageRoute(builder: (context) => const HomeScreen()),
               (route) => false,
             );
+            await dataController.syncData();
           });
         } else {
           EasyLoading.showToast(

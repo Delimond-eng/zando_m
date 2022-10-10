@@ -9,7 +9,6 @@ import 'package:zando_m/models/facture_detail.dart';
 import 'package:zando_m/pages/modals/costumer_create_modal.dart';
 import 'package:zando_m/services/db_helper.dart';
 import 'package:zando_m/services/native_db_helper.dart';
-import 'package:zando_m/widgets/costum_checkbox.dart';
 import 'package:zando_m/widgets/simple_field_text.dart';
 
 import '../../components/topbar.dart';
@@ -20,7 +19,6 @@ import '../../utilities/modals.dart';
 import '../../widgets/costum_table.dart';
 import '../../widgets/round_icon_btn.dart';
 import '../../widgets/tot_info_view.dart';
-import 'print_modal.dart';
 
 createFactureModal(BuildContext context,
     {bool showClientList = true, Client client}) async {
@@ -36,8 +34,6 @@ createFactureModal(BuildContext context,
 
   //items list
   List<FactureDetail> items = <FactureDetail>[];
-
-  bool showPrint = false;
 
   showDialog(
     barrierColor: Colors.black12,

@@ -161,15 +161,15 @@ class _FacturesState extends State<Factures> {
       switch (key) {
         case "all":
           query = await NativeDbHelper.rawQuery(
-              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT factures.facture_state='deleted' AND clients.client_nom LIKE '%$kword%'");
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT factures.facture_state='deleted' AND NOT clients.client_state = 'deleted' AND clients.client_nom LIKE '%$kword%'");
           break;
         case "pending":
           query = await NativeDbHelper.rawQuery(
-              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='en cours' AND NOT factures.facture_state='deleted' AND clients.client_nom LIKE '%$kword%'");
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='en cours' AND NOT factures.facture_state='deleted' AND NOT clients.client_state = 'deleted' AND  clients.client_nom LIKE '%$kword%'");
           break;
         case "completed":
           query = await NativeDbHelper.rawQuery(
-              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='paie' AND NOT factures.facture_state='deleted' AND clients.client_nom LIKE '%$kword%'");
+              "SELECT * FROM factures INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE factures.facture_statut='paie' AND NOT factures.facture_state='deleted' AND NOT clients.client_state = 'deleted' AND clients.client_nom LIKE '%$kword%'");
           break;
         default:
           print("other");

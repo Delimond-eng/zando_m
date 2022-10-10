@@ -72,7 +72,10 @@ class _ClientsState extends State<Clients> {
                 children: [
                   TextButton(
                     style: TextButton.styleFrom(
-                      backgroundColor: Colors.pink,
+                      backgroundColor:
+                          authController.loggedUser.value.userRole == "admin"
+                              ? Colors.pink
+                              : Colors.grey[600],
                       elevation: 2,
                       padding: const EdgeInsets.all(8.0),
                     ),
@@ -84,28 +87,36 @@ class _ClientsState extends State<Clients> {
                         fontSize: 12.0,
                       ),
                     ),
-                    onPressed: () async {
-                      var db = await DbHelper.initDb();
-                      var c = await db.query("clients");
-                      if (c.length == 1) {
-                        return;
-                      }
-                      XDialog.show(context,
-                          message:
-                              "Etes-vous sûr de vouloir supprimér ce client ?",
-                          onValidated: () async {
-                        await db.delete("clients",
-                            where: "client_id=?",
-                            whereArgs: [client.clientId]).then(
-                          (id) {
-                            dataController.loadClients();
-                            XDialog.showMessage(context,
-                                message: "client supprimé avec succès !",
-                                type: "success");
-                          },
-                        );
-                      }, onFailed: () {});
-                    },
+                    onPressed: authController.loggedUser.value.userRole ==
+                            "admin"
+                        ? () async {
+                            var db = await DbHelper.initDb();
+                            var c = await db.query("clients");
+                            if (c.length == 1) {
+                              return;
+                            }
+                            XDialog.show(context,
+                                message:
+                                    "Etes-vous sûr de vouloir supprimér ce client ?",
+                                onValidated: () async {
+                              await db
+                                  .update(
+                                      "clients", {"client_state": "deleted"},
+                                      where: "client_id=?",
+                                      whereArgs: [client.clientId])
+                                  .then(
+                                (id) {
+                                  dataController.loadClients();
+                                  XDialog.showMessage(
+                                    context,
+                                    message: "client supprimé avec succès !",
+                                    type: "success",
+                                  );
+                                },
+                              );
+                            }, onFailed: () {});
+                          }
+                        : null,
                   ),
                   const SizedBox(
                     width: 5.0,

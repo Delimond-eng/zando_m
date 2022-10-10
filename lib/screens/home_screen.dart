@@ -1,4 +1,5 @@
 import 'package:animate_do/animate_do.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:zando_m/components/topbar.dart';
@@ -23,7 +24,6 @@ class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _globalKey = GlobalKey();
   @override
   Widget build(BuildContext context) {
-    var isSync = false;
     return Responsive(
       builder: (context, responsiveInfo) {
         return Scaffold(
@@ -32,29 +32,29 @@ class _HomeScreenState extends State<HomeScreen> {
               : const Sidebar(),
           key: _globalKey,
           floatingActionButton: ZoomIn(
-            child: StatefulBuilder(
-              builder: (_, setter) => FloatingActionButton(
-                child: isSync
-                    ? const Padding(
-                        padding: EdgeInsets.all(20.0),
-                        child: CircularProgressIndicator(
-                          color: Colors.white,
-                          strokeWidth: 2.0,
+            child: Obx(() => FloatingActionButton(
+                  child: (authController.isSyncIn.value)
+                      ? const Padding(
+                          padding: EdgeInsets.all(20.0),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.0,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.cloud_sync,
+                          size: 25.0,
                         ),
-                      )
-                    : const Icon(
-                        Icons.cloud_sync,
-                        size: 25.0,
-                      ),
-                onPressed: () async {
-                  setter(() => isSync = !isSync);
-                  Future.delayed(const Duration(seconds: 2), () {
-                    setter(() => isSync = !isSync);
-                  });
-                  //await Synchroniser.inPutData();
-                },
-              ),
-            ),
+                  onPressed: () async {
+                    var result = await (Connectivity().checkConnectivity());
+                    if (result == ConnectivityResult.mobile ||
+                        result == ConnectivityResult.wifi) {
+                      await Synchroniser.inPutData().then((value) {
+                        authController.isSyncIn.value = false;
+                      });
+                    }
+                  },
+                )),
           ),
           body: Column(
             mainAxisAlignment: MainAxisAlignment.start,

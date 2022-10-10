@@ -3,6 +3,7 @@ import 'package:zando_m/models/operation.dart';
 import 'package:zando_m/reports/models/daily_count.dart';
 import 'package:zando_m/reports/report.dart';
 
+import '../global/controllers.dart';
 import '../global/utils.dart';
 import '../models/client.dart';
 import '../models/compte.dart';
@@ -274,8 +275,36 @@ class DataController extends GetxController {
     } catch (e) {}
   }
 
-  syncData() async {
+  Future syncUserData() async {
     var db = await DbHelper.initDb();
+    var syncDatas = await Synchroniser.outPutData();
+    try {
+      if (syncDatas.users.isNotEmpty) {
+        print(syncDatas.users.length);
+        for (var user in syncDatas.users) {
+          var check = await db.rawQuery(
+            "SELECT * FROM users WHERE user_id = ?",
+            [user.userId],
+          );
+          if (check.isEmpty) {
+            await db.insert("users", user.toMap());
+          } else {
+            await db.update(
+              "users",
+              user.toMap(),
+              where: "user_id=?",
+              whereArgs: [user.userId],
+            );
+          }
+        }
+        return "end";
+      }
+    } catch (e) {}
+  }
+
+  Future syncData() async {
+    var db = await DbHelper.initDb();
+    authController.isSyncIn.value = true;
     var syncDatas = await Synchroniser.outPutData();
     try {
       if (syncDatas.users.isNotEmpty) {
@@ -389,8 +418,9 @@ class DataController extends GetxController {
           }
         } catch (e) {}
       }
-
+      authController.isSyncIn.value = false;
       await refreshDatas();
+      return "end";
     } catch (err) {
       print(err);
     }

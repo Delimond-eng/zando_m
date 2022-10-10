@@ -9,9 +9,7 @@ import 'package:zando_m/pages/components/payment_details_drawer.dart';
 import 'package:zando_m/widgets/empty_table.dart';
 import '../models/operation.dart';
 import '../responsive/base_widget.dart';
-import '../services/db_helper.dart';
 import '../services/native_db_helper.dart';
-import '../utilities/modals.dart';
 import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
 import '../widgets/filter_btn.dart';
@@ -279,32 +277,9 @@ class _PaiementsState extends State<Paiements> {
         .toList();
   }
 
-  _deleteOperation(Operations data) async {
-    var db = await DbHelper.initDb();
-    XDialog.show(context,
-        message: "Etes-vous sûr de vouloir supprimer ce paiement ?",
-        onValidated: () async {
-      Xloading.showLottieLoading(context);
-      await db
-          .update('factures', {'facture_statut': 'en cours'},
-              where: 'facture_id = ?', whereArgs: [data.operationFactureId])
-          .then((id) async {
-        await db.delete(
-          "operations",
-          where: "operation_facture_id=?",
-          whereArgs: [data.operationFactureId],
-        );
-        Xloading.dismiss();
-        XDialog.showMessage(context,
-            message: "Le paiement a été retiré avec succès !");
-        dataController.loadPayments("all");
-      });
-    }, onFailed: () {});
-  }
-
   _searchPay(String kWord) async {
     var query = await NativeDbHelper.rawQuery(
-      "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND clients.client_nom LIKE '%$kWord%' GROUP BY operations.operation_facture_id",
+      "SELECT SUM(operations.operation_montant) AS totalPay, * FROM factures INNER JOIN operations ON factures.facture_id = operations.operation_facture_id INNER JOIN clients ON factures.facture_client_id = clients.client_id WHERE NOT operations.operation_state='deleted' AND NOT clients.client_state = 'deleted' clients.client_nom LIKE '%$kWord%' GROUP BY operations.operation_facture_id",
     );
     dataController.paiements.clear();
     query.forEach((e) {

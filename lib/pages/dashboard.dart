@@ -281,11 +281,17 @@ class _DashBoardState extends State<DashBoard> {
                     ),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.pink,
+                        backgroundColor:
+                            authController.loggedUser.value.userRole == "admin"
+                                ? Colors.pink
+                                : Colors.grey[600],
                         padding: const EdgeInsets.all(20.0),
                       ),
                       onPressed: () async {
-                        _scaffoldKey.currentState.openEndDrawer();
+                        if (authController.loggedUser.value.userRole ==
+                            "admin") {
+                          _scaffoldKey.currentState.openEndDrawer();
+                        }
                       },
                       label: Text(
                         "Mettre à jour",
@@ -466,13 +472,16 @@ class _DashBoardState extends State<DashBoard> {
         message: "Etes-vous sûr de vouloir supprimer cette facture ?",
         onValidated: () async {
       Xloading.showLottieLoading(context);
-      await db.delete(
+      await db.update(
         "facture_details",
+        {"facture_detail_state": "deleted"},
         where: "facture_id=?",
         whereArgs: [fac.factureId],
       );
-      await db.delete("factures",
-          where: "facture_id=?", whereArgs: [fac.factureId]).then((id) {
+      await db
+          .update("factures", {"facture_state": "deleted"},
+              where: "facture_id=?", whereArgs: [fac.factureId])
+          .then((id) {
         Xloading.dismiss();
         dataController.loadFacturesEnAttente();
       });
