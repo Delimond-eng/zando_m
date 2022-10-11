@@ -32,7 +32,7 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
   @override
   void initState() {
     super.initState();
-    insertUser();
+    initData();
   }
 
   insertUser() async {
@@ -41,7 +41,7 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
     if (users.isEmpty) {
       var user = User(
         userName: "Gaston",
-        userPass: "admin",
+        userPass: "12345",
         userRole: "admin",
       );
       var userId = await db.insert(
@@ -225,7 +225,11 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
               MaterialPageRoute(builder: (context) => const HomeScreen()),
               (route) => false,
             );
-            await dataController.syncData();
+            var result = await (Connectivity().checkConnectivity());
+            if (result == ConnectivityResult.mobile ||
+                result == ConnectivityResult.wifi) {
+              await dataController.syncData();
+            }
           });
         } else {
           EasyLoading.showToast(

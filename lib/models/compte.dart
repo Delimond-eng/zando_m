@@ -1,8 +1,8 @@
 import '../global/utils.dart';
 
 class Compte {
-  int compteId;
-  int compteTimestamp;
+  dynamic compteId;
+  dynamic compteTimestamp;
   String compteLibelle;
   String compteDevise;
   String compteStatus;

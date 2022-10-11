@@ -94,7 +94,7 @@ class Sidebar extends StatelessWidget {
                       SidebarMenuItem(
                         icon: CupertinoIcons.cube_box_fill,
                         disabled:
-                            authController.loggedUser.value.userRole == "admin",
+                            authController.loggedUser.value.userRole != "admin",
                         itemName: "/treasures",
                         label: "Trésoreries",
                         onTap: () {
@@ -104,7 +104,7 @@ class Sidebar extends StatelessWidget {
                       SidebarMenuItem(
                         icon: CupertinoIcons.doc_chart_fill,
                         disabled:
-                            authController.loggedUser.value.userRole == "admin",
+                            authController.loggedUser.value.userRole != "admin",
                         itemName: "/inventories",
                         label: "Inventaires",
                         onTap: () {
@@ -120,7 +120,7 @@ class Sidebar extends StatelessWidget {
                       SidebarMenuItem(
                         icon: Icons.manage_accounts,
                         disabled:
-                            authController.loggedUser.value.userRole == "admin",
+                            authController.loggedUser.value.userRole != "admin",
                         itemName: "/users",
                         label: "Utilisateurs",
                         onTap: () {

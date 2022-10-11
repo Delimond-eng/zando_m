@@ -5,18 +5,18 @@ import 'facture.dart';
 import 'user.dart';
 
 class Operations {
-  int operationId;
+  dynamic operationId;
   String operationLibelle;
   String operationType;
   String operationMode;
   String operationDate;
-  int operationTimestamp;
-  double operationMontant;
+  dynamic operationTimestamp;
+  dynamic operationMontant;
   String operationDevise;
   String operationState;
-  int operationCompteId;
-  int operationFactureId;
-  int operationUserId;
+  dynamic operationCompteId;
+  dynamic operationFactureId;
+  dynamic operationUserId;
   double totalPayment;
   String clientNom;
 

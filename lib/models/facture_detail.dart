@@ -1,13 +1,13 @@
 import '../global/utils.dart';
 
 class FactureDetail {
-  int factureDetailId;
+  dynamic factureDetailId;
   String factureDetailLibelle;
-  int factureDetailQte;
+  dynamic factureDetailQte;
   String factureDetailPu;
   String factureDetailDevise;
-  int factureId;
-  int factureDetailTimestamp;
+  dynamic factureId;
+  dynamic factureDetailTimestamp;
   String factureDetailState;
   double get total => double.parse(factureDetailPu) * factureDetailQte;
   FactureDetail({

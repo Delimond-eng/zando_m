@@ -194,6 +194,9 @@ class _UsersState extends State<Users> {
                       });
                     },
                   ),
+                  const SizedBox(
+                    width: 5.0,
+                  ),
                   TextButton(
                     style: TextButton.styleFrom(
                       backgroundColor: Colors.blue,

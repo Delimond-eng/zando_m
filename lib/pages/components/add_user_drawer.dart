@@ -25,8 +25,6 @@ class AddUserDrawer extends StatelessWidget {
 
     if (user != null) {
       _userName.text = user.userName;
-      _userPass.text = Cryptage.decrypt(user.userPass);
-      _userRole = user.userRole;
     }
     return Container(
       alignment: Alignment.topCenter,
@@ -116,9 +114,11 @@ class AddUserDrawer extends StatelessWidget {
                     height: 10.0,
                   ),
                   CustomBtn(
-                    icon: CupertinoIcons.add,
+                    icon: user == null ? CupertinoIcons.add : Icons.edit,
                     color: user == null ? Colors.green : Colors.blue,
-                    label: "Créer utilisateur",
+                    label: user == null
+                        ? "Créer utilisateur"
+                        : "Modifier utilisateur",
                     onPressed: () async {
                       if (_userName.text.isEmpty && _userPass.text.isEmpty) {
                         EasyLoading.showToast(

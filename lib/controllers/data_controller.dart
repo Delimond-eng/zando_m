@@ -125,7 +125,7 @@ class DataController extends GetxController {
   loadClients() async {
     try {
       var allClients = await NativeDbHelper.rawQuery(
-          "SELECT * FROM clients WHERE NOT client_state='deleted' ORDER BY client_id DESC");
+          "SELECT * FROM clients WHERE NOT client_state ='deleted' ORDER BY client_id DESC");
       if (allClients != null) {
         clients.clear();
         allClients.forEach((e) {

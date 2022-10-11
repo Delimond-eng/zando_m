@@ -2,14 +2,14 @@ import '../global/controllers.dart';
 import '../global/utils.dart';
 
 class Client {
-  int clientId;
-  int userId;
+  dynamic clientId;
+  dynamic userId;
   String clientNom;
   String clientTel;
   String clientAdresse;
   String clientCreatAt;
   String clientState;
-  int clientTimestamp;
+  dynamic clientTimestamp;
 
   bool isSelected = false;
   Client({
