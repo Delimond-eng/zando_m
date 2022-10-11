@@ -9,7 +9,6 @@ import 'package:zando_m/widgets/empty_table.dart';
 import '../responsive/base_widget.dart';
 import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
-import '../widgets/search_input.dart';
 
 class Users extends StatefulWidget {
   const Users({Key key}) : super(key: key);
@@ -193,6 +192,25 @@ class _UsersState extends State<Users> {
                           whereArgs: [user.userId]).then((id) {
                         dataController.loadUsers();
                       });
+                    },
+                  ),
+                  TextButton(
+                    style: TextButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      elevation: 2,
+                      padding: const EdgeInsets.all(8.0),
+                    ),
+                    child: Text(
+                      "Modifier",
+                      style: GoogleFonts.didactGothic(
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                        fontSize: 12.0,
+                      ),
+                    ),
+                    onPressed: () async {
+                      authController.selectedEditUser.value = user;
+                      _scaffoldKey.currentState.openEndDrawer();
                     },
                   ),
                 ],

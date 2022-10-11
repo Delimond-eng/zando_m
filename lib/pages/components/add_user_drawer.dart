@@ -7,6 +7,7 @@ import 'package:zando_m/services/db_helper.dart';
 import 'package:zando_m/utilities/modals.dart';
 import 'package:zando_m/widgets/costum_dropdown.dart';
 
+import '../../global/data_crypt.dart';
 import '../../models/user.dart';
 import '../../widgets/custom_btn.dart';
 import '../../widgets/round_icon_btn.dart';
@@ -20,6 +21,13 @@ class AddUserDrawer extends StatelessWidget {
     var _userName = TextEditingController();
     var _userPass = TextEditingController();
     var _userRole;
+    var user = authController.selectedEditUser.value;
+
+    if (user != null) {
+      _userName.text = user.userName;
+      _userPass.text = Cryptage.decrypt(user.userPass);
+      _userRole = user.userRole;
+    }
     return Container(
       alignment: Alignment.topCenter,
       margin: const EdgeInsets.only(right: 15.0),
@@ -109,7 +117,7 @@ class AddUserDrawer extends StatelessWidget {
                   ),
                   CustomBtn(
                     icon: CupertinoIcons.add,
-                    color: Colors.green,
+                    color: user == null ? Colors.green : Colors.blue,
                     label: "Créer utilisateur",
                     onPressed: () async {
                       if (_userName.text.isEmpty && _userPass.text.isEmpty) {
@@ -129,15 +137,32 @@ class AddUserDrawer extends StatelessWidget {
                         userPass: _userPass.text,
                         userRole: _userRole,
                       );
-                      await db.insert("users", user.toMap()).then((id) {
-                        dataController.loadUsers();
-                        Navigator.pop(context);
-                        XDialog.showMessage(
-                          context,
-                          message: "Utilisateur créé avec succès !",
-                          type: "success",
-                        );
-                      });
+                      if (user == null) {
+                        await db.insert("users", user.toMap()).then((id) {
+                          dataController.loadUsers();
+                          Navigator.pop(context);
+                          XDialog.showMessage(
+                            context,
+                            message: "Utilisateur créé avec succès !",
+                            type: "success",
+                          );
+                        });
+                      } else {
+                        await db.update(
+                          "users",
+                          user.toMap(),
+                          where: "user_id=?",
+                          whereArgs: [user.userId],
+                        ).then((id) {
+                          dataController.loadUsers();
+                          Navigator.pop(context);
+                          XDialog.showMessage(
+                            context,
+                            message: "Utilisateur modifié avec succès !",
+                            type: "success",
+                          );
+                        });
+                      }
                     },
                   )
                 ],
