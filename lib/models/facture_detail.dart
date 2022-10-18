@@ -9,7 +9,9 @@ class FactureDetail {
   dynamic factureId;
   dynamic factureDetailTimestamp;
   String factureDetailState;
-  double get total => double.parse(factureDetailPu) * factureDetailQte;
+  double get total =>
+      double.parse(factureDetailPu.toString()) *
+      double.parse(factureDetailQte.toString());
   FactureDetail({
     this.factureDetailId,
     this.factureDetailLibelle,
@@ -31,7 +33,12 @@ class FactureDetail {
       data["facture_detail_libelle"] = factureDetailLibelle;
     }
     if (factureDetailQte != null) {
-      data["facture_detail_qte"] = int.parse(factureDetailQte.toString());
+      if (factureDetailQte.toString().contains(",")) {
+        data["facture_detail_qte"] =
+            double.parse(factureDetailQte.toString().replaceAll(",", "."));
+      } else {
+        data["facture_detail_qte"] = double.parse(factureDetailQte.toString());
+      }
     }
     if (factureDetailPu != null) {
       if (factureDetailPu.contains(",")) {

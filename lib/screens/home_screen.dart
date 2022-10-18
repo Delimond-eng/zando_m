@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:zando_m/components/topbar.dart';
 import 'package:zando_m/global/controllers.dart';
+import 'package:zando_m/services/db_helper.dart';
 import 'package:zando_m/services/synchonisation.dart';
 
 import '../components/sidebar.dart';
@@ -72,13 +73,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         children: [
                           const SizedBox(),
                           Positioned(
-                            top: -20.0,
+                            top: -30.0,
                             child: AppLogo(
                               color: responsiveInfo.deviceScreenType !=
                                       DeviceScreenType.Desktop
                                   ? Colors.white
                                   : Colors.white,
-                              secondaryColor: Colors.orange[200],
+                              secondaryColor: Colors.black,
                               size: 25.0,
                             ),
                           ),

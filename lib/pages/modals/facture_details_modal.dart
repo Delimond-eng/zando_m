@@ -39,7 +39,8 @@ factureDetailsModal(BuildContext context, Facture facture) async {
   /* LAST PAYMENT */
 
   double _lastAmount = 0;
-  var lastPayment = await Report.checkLastPay(facture.factureId);
+  var lastPayment =
+      await Report.checkLastPay(int.parse(facture.factureId.toString()));
   if (lastPayment != null) {
     _lastAmount = lastPayment;
   }
@@ -287,14 +288,10 @@ factureDetailsModal(BuildContext context, Facture facture) async {
                             ),
                             ElevatedButton.icon(
                               onPressed: () async {
-                                Future.delayed(
-                                    const Duration(milliseconds: 500), () {
-                                  showPrintViewer(
-                                    context,
-                                    factureId: facture.factureId,
-                                  );
-                                  Get.back();
-                                });
+                                showPrintViewer(
+                                  context,
+                                  factureId: facture.factureId,
+                                );
                               },
                               style: ElevatedButton.styleFrom(
                                 padding: const EdgeInsets.all(20.0),

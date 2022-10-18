@@ -17,7 +17,7 @@ class AppLogo extends StatelessWidget {
           text: TextSpan(
             children: [
               TextSpan(
-                text: "G -",
+                text: "zando ",
                 style: GoogleFonts.bungeeInline(
                   color: color ?? Colors.pink,
                   fontWeight: FontWeight.w900,
@@ -25,7 +25,7 @@ class AppLogo extends StatelessWidget {
                 ),
               ),
               TextSpan(
-                text: " Numerics",
+                text: " Graphics",
                 style: GoogleFonts.bungeeInline(
                   color: secondaryColor ?? Colors.black,
                   fontWeight: FontWeight.w900,

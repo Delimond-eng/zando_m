@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ffi';
+import 'package:flutter/foundation.dart';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:sqlite3/open.dart';
 
@@ -100,10 +101,14 @@ class NativeDbHelper {
     }
 
     if (result != null) {
-      return jsonDecode(result);
+      return compute(deserialize, result);
     } else {
       return null;
     }
+  }
+
+  static deserialize(data) {
+    return jsonDecode(data);
   }
 
   ///
@@ -119,7 +124,7 @@ class NativeDbHelper {
       db.dispose();
     } catch (err) {}
     if (result != null) {
-      return jsonDecode(result);
+      return compute(deserialize, result);
     } else {
       return null;
     }

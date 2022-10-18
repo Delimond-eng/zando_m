@@ -137,27 +137,29 @@ class PaymentDetailsDrawer extends StatelessWidget {
                 Row(
                   children: [
                     TextButton(
-                      style: TextButton.styleFrom(
-                        backgroundColor:
-                            authController.loggedUser.value.userRole == "admin"
-                                ? Colors.pink
-                                : Colors.grey[600],
-                        elevation: 2,
-                        padding: const EdgeInsets.all(8.0),
-                      ),
-                      child: Text(
-                        "Supprimer",
-                        style: GoogleFonts.didactGothic(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                          fontSize: 12.0,
+                        style: TextButton.styleFrom(
+                          backgroundColor:
+                              authController.loggedUser.value.userRole ==
+                                      "admin"
+                                  ? Colors.pink
+                                  : Colors.grey[600],
+                          elevation: 2,
+                          padding: const EdgeInsets.all(8.0),
                         ),
-                      ),
-                      onPressed:
-                          authController.loggedUser.value.userRole == "admin"
-                              ? _deleteOperation(context, data)
-                              : null,
-                    ),
+                        child: Text(
+                          "Supprimer",
+                          style: GoogleFonts.didactGothic(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            fontSize: 12.0,
+                          ),
+                        ),
+                        onPressed: () {
+                          if (authController.loggedUser.value.userRole ==
+                              "admin") {
+                            _deleteOperation(context, data);
+                          }
+                        }),
                   ],
                 ),
               )
@@ -169,6 +171,7 @@ class PaymentDetailsDrawer extends StatelessWidget {
 
   _deleteOperation(BuildContext context, Operations data) async {
     var db = await DbHelper.initDb();
+    // ignore: use_build_context_synchronously
     XDialog.show(context,
         message: "Etes-vous sûr de vouloir supprimer ce paiement ?",
         onValidated: () async {

@@ -1,6 +1,7 @@
 import 'package:animate_do/animate_do.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/global/controllers.dart';
@@ -37,8 +38,14 @@ class _InventoriesState extends State<Inventories> {
     super.initState();
     initData();
     dataController.loadAllComptes();
-    dataController.loadInventories("all");
-    initTot();
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      dataController.dataLoading.value = true;
+      dataController.loadInventories("all").then((res) {
+        debugPrint(res.toString());
+        dataController.dataLoading.value = false;
+        initTot();
+      });
+    });
   }
 
   initData() async {
@@ -54,10 +61,10 @@ class _InventoriesState extends State<Inventories> {
     Future.delayed(const Duration(milliseconds: 500), () {
       setState(() {
         for (var e in dataController.inventories) {
-          if (e.operationType == 'entrée') {
+          if (e.operationType.toLowerCase() == 'entrée') {
             en += e.totalPayment;
           }
-          if (e.operationType == 'sortie') {
+          if (e.operationType.toLowerCase() == 'sortie') {
             so += e.totalPayment;
           }
         }
@@ -188,8 +195,10 @@ class _InventoriesState extends State<Inventories> {
                         ),
                       ),
                       onPressed: () async {
-                        await dataController.loadPayments("details",
-                            field: e.operationCompteId);
+                        dataController.loadPayments(
+                          "details",
+                          field: int.parse(e.operationTimestamp.toString()),
+                        );
                         inventoryDetailsModal(context, data: e);
                       },
                     ),
@@ -641,7 +650,7 @@ class SyntheseInfo extends StatelessWidget {
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: "$amount",
+                          text: amount.toStringAsFixed(2),
                           style: GoogleFonts.staatliches(
                             color: Colors.black,
                             fontWeight: FontWeight.w800,
