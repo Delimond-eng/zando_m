@@ -111,11 +111,15 @@ class Sidebar extends StatelessWidget {
                           navigatorController.navigateTo("/inventories");
                         },
                       ),
-                      Container(
-                        margin: const EdgeInsets.all(8.0),
-                        height: 1,
-                        color: Colors.grey[100],
-                        width: double.infinity,
+                      SidebarMenuItem(
+                        icon: Icons.backpack_rounded,
+                        disabled:
+                            authController.loggedUser.value.userRole != "admin",
+                        itemName: "/stocks",
+                        label: "Stockage",
+                        onTap: () {
+                          navigatorController.navigateTo("/stocks");
+                        },
                       ),
                       SidebarMenuItem(
                         icon: Icons.manage_accounts,

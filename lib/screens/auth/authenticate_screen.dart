@@ -53,6 +53,7 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
   }
 
   initData() async {
+    await authController.registerUser();
     var result = await (Connectivity().checkConnectivity());
     if (result == ConnectivityResult.mobile ||
         result == ConnectivityResult.wifi) {

@@ -3,19 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:get/get.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:zando_m/repositories/stock_repo/services/stock_db_native_helper.dart';
 
 import 'controllers/auth_controller.dart';
 import 'controllers/data_controller.dart';
 import 'controllers/navigator_controller.dart';
+import 'repositories/stock_repo/services/db_stock_helper.dart';
 import 'screens/auth/authenticate_screen.dart';
 import 'services/db_helper.dart';
-import 'services/native_db_helper.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await DbHelper.initDbLibrary();
   await DbHelper.initDb();
-  await NativeDbHelper.initDb();
+  await DbStockHelper.initDb();
   Get.put(NavigatorController());
   Get.put(DataController());
   Get.put(AuthController());

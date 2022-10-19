@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zando_m/pages/factures.dart';
+import 'package:zando_m/pages/stockages.dart';
 import 'package:zando_m/pages/treasures.dart';
 import '../pages/dashboard.dart';
 import '../pages/clients.dart';
@@ -23,6 +24,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _getPageRoute(const Factures());
     case "/users":
       return _getPageRoute(const Users());
+    case "/stocks":
+      return _getPageRoute(const Stockages());
     default:
       return _getPageRoute(const DashBoard());
   }
