@@ -1,15 +1,22 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:zando_m/global/controllers.dart';
 import 'package:zando_m/pages/components/stock_create_drawer.dart';
 import 'package:zando_m/pages/modals/stock_detail_modal.dart';
+import 'package:zando_m/pages/modals/stock_mouvement_modal.dart';
+import 'package:zando_m/repositories/stock_repo/sync.dart';
 import 'package:zando_m/widgets/search_input.dart';
 
+import '../global/utils.dart';
 import '../repositories/stock_repo/models/stock.dart';
-import '../repositories/stock_repo/services/db_stock_helper.dart';
 import '../responsive/base_widget.dart';
 import '../widgets/costum_table.dart';
 import '../widgets/custom_page.dart';
+import '../widgets/empty_table.dart';
 
 class Stockages extends StatefulWidget {
   const Stockages({Key key}) : super(key: key);
@@ -22,28 +29,27 @@ class _StockagesState extends State<Stockages> {
   final GlobalKey<ScaffoldState> _key = GlobalKey();
   List<Stock> stocks = <Stock>[];
 
-  initData() async {
-    var db = await DbStockHelper.initDb();
-    var query = await db.rawQuery(
-        "SELECT SUM(mouvements.mouvt_qte_en) AS entrees,SUM(mouvements.mouvt_qte_so) AS sorties, * FROM stocks INNER JOIN articles ON stocks.stock_article_id = articles.article_id INNER JOIN mouvements ON stocks.stock_id = mouvements.mouvt_stock_id WHERE NOT stocks.stock_state = 'deleted' AND NOT mouvements.mouvt_state='deleted' AND NOT articles.article_state = 'deleted' GROUP BY stocks.stock_id,mouvements.mouvt_create_At ORDER BY mouvements.mouvt_create_At DESC");
-    stocks.clear();
-    for (var e in query) {
-      stocks.add(Stock.fromMap(e));
-    }
-    setState(() {});
-  }
-
   @override
   void initState() {
     super.initState();
-    initData();
+    SchedulerBinding.instance.addPostFrameCallback((_) async {
+      dataController.dataLoading.value = true;
+      stockController.reloadData().then((res) {
+        dataController.dataLoading.value = false;
+      });
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: _key,
-      endDrawer: const StockCreateDrawer(),
+      endDrawer: StockCreateDrawer(
+        onReload: () async {
+          setState(() {});
+          stockController.reloadData();
+        },
+      ),
       drawerScrimColor: Colors.transparent,
       body: CustomPage(
         title: "Stockage",
@@ -84,7 +90,10 @@ class _StockagesState extends State<Stockages> {
                           ),
                           Flexible(
                             child: SearchInput(
-                              onChanged: (value) {},
+                              hintText: "Recherche stock...",
+                              onChanged: (value) {
+                                stockController.reloadData(seachWord: value);
+                              },
                             ),
                           ),
                           const SizedBox(
@@ -114,24 +123,28 @@ class _StockagesState extends State<Stockages> {
                       ),
                     ),
                     Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.all(10.0),
-                        children: [
-                          CostumTable(
-                            cols: const [
-                              "Date stockage",
-                              "Article",
-                              "Prix d'achat",
-                              "Qté entrée",
-                              "Qté sortie",
-                              "Solde",
-                              "Status",
-                              ""
-                            ],
-                            data: _createRows(context),
-                          ),
-                        ],
-                      ),
+                      child: Obx(() {
+                        return (stockController.stocks.isEmpty)
+                            ? const EmptyTable()
+                            : ListView(
+                                padding: const EdgeInsets.all(10.0),
+                                children: [
+                                  CostumTable(
+                                    cols: const [
+                                      "Date stockage",
+                                      "Article",
+                                      "Prix d'achat",
+                                      "Qté entrée",
+                                      "Qté sortie",
+                                      "Solde",
+                                      "Status",
+                                      ""
+                                    ],
+                                    data: _createRows(context),
+                                  ),
+                                ],
+                              );
+                      }),
                     ),
                   ],
                 );
@@ -144,9 +157,12 @@ class _StockagesState extends State<Stockages> {
   }
 
   List<DataRow> _createRows(BuildContext context) {
-    return stocks
+    return stockController.stocks
         .map(
           (data) => DataRow(
+            color: data.solde > 0
+                ? null
+                : MaterialStateProperty.all(Colors.pink[100]),
             onSelectChanged: (val) {
               if (val) {
                 showStockDetails(context);
@@ -198,9 +214,7 @@ class _StockagesState extends State<Stockages> {
               ),
               DataCell(
                 Text(
-                  (int.parse(data.stockEn.toString()) -
-                          int.parse(data.stockSo.toString()))
-                      .toString(),
+                  data.solde.toString(),
                   textAlign: TextAlign.center,
                   style: GoogleFonts.didactGothic(
                     fontWeight: FontWeight.w600,
@@ -211,17 +225,16 @@ class _StockagesState extends State<Stockages> {
                 Container(
                   padding: const EdgeInsets.all(5.0),
                   decoration: BoxDecoration(
-                    color: data.stockStatus == "actif"
-                        ? Colors.green[200]
-                        : Colors.pink[100],
+                    color:
+                        (data.solde > 0) ? Colors.green[200] : Colors.pink[100],
                     borderRadius: BorderRadius.circular(3.0),
                   ),
                   child: Text(
-                    data.stockStatus,
+                    data.solde > 0 ? "actif" : "inactif",
                     style: GoogleFonts.didactGothic(
                       fontWeight: FontWeight.w600,
                       fontSize: 10.0,
-                      color: data.stockStatus == "actif"
+                      color: (data.solde > 0)
                           ? Colors.green[700]
                           : Colors.pink[800],
                     ),
@@ -234,48 +247,67 @@ class _StockagesState extends State<Stockages> {
                   children: [
                     TextButton.icon(
                       style: TextButton.styleFrom(
-                        backgroundColor: Colors.green,
+                        backgroundColor: Colors.blue,
                         elevation: 2,
                         padding: const EdgeInsets.all(8.0),
                       ),
                       icon: const Icon(
-                        Icons.add_circle,
-                        size: 14.0,
+                        Icons.add,
+                        size: 12.0,
                         color: Colors.white,
                       ),
                       label: Text(
-                        "Entrée",
+                        "Entrer",
                         style: GoogleFonts.didactGothic(
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                           fontSize: 12.0,
                         ),
                       ),
-                      onPressed: () async {},
+                      onPressed: () async {
+                        showStokMouvementModal(
+                          context,
+                          "Mouvement entrée stock de l'article : ${data.article.articleLibelle}",
+                          onReload: () {
+                            Get.back();
+                            stockController.reloadData();
+                          },
+                          a: data.article,
+                          s: data,
+                          isEn: true,
+                        );
+                      },
                     ),
                     const SizedBox(
                       width: 5,
                     ),
                     TextButton.icon(
                       style: TextButton.styleFrom(
-                        backgroundColor: Colors.orange,
+                        backgroundColor: Colors.pink,
                         elevation: 2,
                         padding: const EdgeInsets.all(8.0),
                       ),
                       icon: const Icon(
-                        Icons.remove_circle,
-                        size: 14.0,
+                        Icons.remove,
+                        size: 12.0,
                         color: Colors.white,
                       ),
                       label: Text(
-                        "Sortie",
+                        "Sortir",
                         style: GoogleFonts.didactGothic(
                           fontWeight: FontWeight.w600,
                           color: Colors.white,
                           fontSize: 12.0,
                         ),
                       ),
-                      onPressed: () async {},
+                      onPressed: () async {
+                        showStokMouvementModal(context,
+                            "Mouvement sortie stock de l'article : ${data.article.articleLibelle}",
+                            onReload: () {
+                          Get.back();
+                          stockController.reloadData();
+                        }, a: data.article, s: data, color: Colors.pink);
+                      },
                     ),
                   ],
                 ),

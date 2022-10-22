@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:zando_m/repositories/stock_repo/models/article.dart';
 import 'package:zando_m/repositories/stock_repo/models/mouvement.dart';
@@ -13,7 +14,8 @@ import '../../widgets/round_icon_btn.dart';
 import '../../widgets/simple_field_text.dart';
 
 class StockCreateDrawer extends StatelessWidget {
-  const StockCreateDrawer({Key key}) : super(key: key);
+  final Function onReload;
+  const StockCreateDrawer({Key key, this.onReload}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -160,6 +162,9 @@ class StockCreateDrawer extends StatelessWidget {
                             XDialog.showMessage(context,
                                 message: "stock crée avec succès",
                                 type: "success");
+                            Future.delayed(const Duration(seconds: 3), () {
+                              onReload();
+                            });
                           });
                         }).catchError((err) {
                           Xloading.dismiss();

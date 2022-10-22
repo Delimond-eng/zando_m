@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:zando_m/components/topbar.dart';
 import 'package:zando_m/global/controllers.dart';
+import 'package:zando_m/repositories/stock_repo/sync.dart';
 import 'package:zando_m/services/db_helper.dart';
 import 'package:zando_m/services/synchonisation.dart';
 
@@ -50,9 +51,16 @@ class _HomeScreenState extends State<HomeScreen> {
                     var result = await (Connectivity().checkConnectivity());
                     if (result == ConnectivityResult.mobile ||
                         result == ConnectivityResult.wifi) {
-                      await Synchroniser.inPutData().then((value) {
-                        authController.isSyncIn.value = false;
-                      });
+                      if (authController.checkUser) {
+                        await Synchroniser.inPutData().then((value) {
+                          authController.isSyncIn.value = false;
+                        });
+                      } else {
+                        await SyncStock.syncOut().then((value) {
+                          SyncStock.syncIn().then(
+                              (value) => authController.isSyncIn.value = false);
+                        });
+                      }
                     }
                   },
                 )),

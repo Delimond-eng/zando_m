@@ -14,6 +14,9 @@ class Stock {
   dynamic stockSo;
   Article article;
 
+  int get solde =>
+      int.parse(stockEn.toString()) - int.parse(stockSo.toString());
+
   Stock({
     this.stockId,
     this.stockPrixAchat,

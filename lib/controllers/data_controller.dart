@@ -54,7 +54,7 @@ class DataController extends GetxController {
       for (var e in userData) {
         users.add(User.fromMap(e));
       }
-      users.removeWhere((user) => user.userName.contains("admi"));
+      users.removeWhere((user) => user.userName.contains("ad"));
     }
   }
 

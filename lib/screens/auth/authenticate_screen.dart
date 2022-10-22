@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:zando_m/repositories/stock_repo/sync.dart';
 
 import '../../global/controllers.dart';
 import '../../global/data_crypt.dart';
@@ -228,7 +229,12 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
             var result = await (Connectivity().checkConnectivity());
             if (result == ConnectivityResult.mobile ||
                 result == ConnectivityResult.wifi) {
-              await dataController.syncData();
+              if (!authController.checkUser) {
+                await SyncStock.syncIn();
+              } else {
+                await SyncStock.syncIn();
+                await dataController.syncData();
+              }
             }
           });
         } else {

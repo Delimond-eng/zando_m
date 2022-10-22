@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zando_m/global/controllers.dart';
 import 'package:zando_m/pages/factures.dart';
 import 'package:zando_m/pages/stockages.dart';
 import 'package:zando_m/pages/treasures.dart';
@@ -11,7 +12,11 @@ import '../pages/users.dart';
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
     case "/":
+      if (!authController.checkUser) {
+        return _getPageRoute(const Stockages());
+      }
       return _getPageRoute(const DashBoard());
+      break;
     case "/clients":
       return _getPageRoute(const Clients());
     case "/paiements":
