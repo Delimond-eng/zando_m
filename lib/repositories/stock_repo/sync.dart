@@ -18,6 +18,11 @@ class SyncStock {
 
         if (isEmpty) {
           Firestore.instance.collection('stocks').add(e);
+        } else if (e["stock_state"] == "deleted") {
+          Firestore.instance
+              .collection('stocks')
+              .document(e["stock_id"].toString())
+              .update(e);
         }
       }
     }
@@ -27,6 +32,11 @@ class SyncStock {
             id: "mouvt_id", value: e["mouvt_id"].toString());
         if (isEmpty) {
           Firestore.instance.collection('mouvements').add(e);
+        } else if (e["mouvt_state"] == "deleted") {
+          Firestore.instance
+              .collection('mouvements')
+              .document(e["mouvt_id"].toString())
+              .update(e);
         }
       }
     }
@@ -36,6 +46,11 @@ class SyncStock {
             id: "article_id", value: e["article_id"].toString());
         if (isEmpty) {
           Firestore.instance.collection('articles').add(e);
+        } else if (e["article_state"] == "deleted") {
+          Firestore.instance
+              .collection('articles')
+              .document(e["article_id"].toString())
+              .update(e);
         }
       }
     }
@@ -46,19 +61,23 @@ class SyncStock {
   static Future syncIn() async {
     authController.isSyncIn.value = true;
     var db = await DbStockHelper.initDb();
-    final batch = db.batch();
+
     try {
       await Firestore.instance
           .collection("mouvements")
           .get()
           .then((result) async {
+        final batch = db.batch();
         for (var e in result) {
           var s = await db.query("mouvements",
               where: "mouvt_id=?", whereArgs: [e["mouvt_id"]]);
-          if (s.isEmpty && e["mouvt_state"] != "deleted") {
-            batch.insert("mouvements", e.map);
+          if (s.isEmpty) {
+            if (!e["mouvt_state"].toString().contains("deleted")) {
+              batch.insert("mouvements", e.map);
+            }
           }
         }
+        await batch.commit();
       });
     } catch (e) {}
     try {
@@ -66,28 +85,34 @@ class SyncStock {
           .collection("articles")
           .get()
           .then((result) async {
+        final batch = db.batch();
         for (var e in result) {
           var s = await db.query("articles",
               where: "article_id=?", whereArgs: [e["article_id"]]);
-          if (s.isEmpty && e["article_state"] != "deleted") {
-            batch.insert("articles", e.map);
+          if (s.isEmpty) {
+            if (!e["article_state"].toString().contains("deleted")) {
+              batch.insert("articles", e.map);
+            }
           }
         }
+        await batch.commit();
       });
     } catch (e) {}
     try {
       await Firestore.instance.collection("stocks").get().then((result) async {
+        final batch = db.batch();
         for (var e in result) {
           var s = await db
               .query("stocks", where: "stock_id=?", whereArgs: [e["stock_id"]]);
-          if (s.isEmpty && e["stock_state"] != "deleted") {
-            batch.insert("stocks", e.map);
+          if (s.isEmpty) {
+            if (!e["stock_state"].toString().contains("deleted")) {
+              batch.insert("stocks", e.map);
+            }
           }
         }
+        await batch.commit();
       });
     } catch (e) {}
-
-    await batch.commit();
     await stockController.reloadData();
     authController.isSyncIn.value = false;
     return "end";

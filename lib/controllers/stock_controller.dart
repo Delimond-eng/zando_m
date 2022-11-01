@@ -1,3 +1,4 @@
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get/get.dart';
 import 'package:zando_m/global/controllers.dart';
 
@@ -21,7 +22,6 @@ class StockController extends GetxController {
       query = await db.rawQuery(
           "SELECT SUM(mouvements.mouvt_qte_en) AS entrees,SUM(mouvements.mouvt_qte_so) AS sorties, * FROM stocks INNER JOIN articles ON stocks.stock_article_id = articles.article_id INNER JOIN mouvements ON stocks.stock_id = mouvements.mouvt_stock_id WHERE NOT stocks.stock_state = 'deleted' AND NOT mouvements.mouvt_state='deleted' AND NOT articles.article_state = 'deleted' AND articles.article_libelle LIKE '%$seachWord%' GROUP BY stocks.stock_id,stocks.stock_create_At ORDER BY mouvements.mouvt_create_At DESC");
     }
-
     stocks.clear();
     var s = <Stock>[];
     for (var e in query) {
@@ -30,6 +30,10 @@ class StockController extends GetxController {
     }
     stocks.addAll(s);
     dataController.dataLoading.value = false;
-    await SyncStock.syncOut();
+    var result = await (Connectivity().checkConnectivity());
+    if (result == ConnectivityResult.mobile ||
+        result == ConnectivityResult.wifi) {
+      await SyncStock.syncOut();
+    }
   }
 }

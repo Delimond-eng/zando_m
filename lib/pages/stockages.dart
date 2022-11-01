@@ -1,4 +1,3 @@
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
@@ -8,10 +7,11 @@ import 'package:zando_m/global/controllers.dart';
 import 'package:zando_m/pages/components/stock_create_drawer.dart';
 import 'package:zando_m/pages/modals/stock_detail_modal.dart';
 import 'package:zando_m/pages/modals/stock_mouvement_modal.dart';
-import 'package:zando_m/repositories/stock_repo/sync.dart';
+import 'package:zando_m/repositories/stock_repo/models/mouvement.dart';
+import 'package:zando_m/repositories/stock_repo/services/db_stock_helper.dart';
+import 'package:zando_m/utilities/modals.dart';
 import 'package:zando_m/widgets/search_input.dart';
 
-import '../global/utils.dart';
 import '../repositories/stock_repo/models/stock.dart';
 import '../responsive/base_widget.dart';
 import '../widgets/costum_table.dart';
@@ -67,27 +67,6 @@ class _StockagesState extends State<Stockages> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                CupertinoIcons.doc_chart_fill,
-                                size: 15.0,
-                              ),
-                              const SizedBox(
-                                width: 5.0,
-                              ),
-                              Text(
-                                "Rapport global stocks",
-                                style: GoogleFonts.didactGothic(
-                                  fontSize: 18.0,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(
-                            width: 10.0,
-                          ),
                           Flexible(
                             child: SearchInput(
                               hintText: "Recherche stock...",
@@ -131,13 +110,12 @@ class _StockagesState extends State<Stockages> {
                                 children: [
                                   CostumTable(
                                     cols: const [
-                                      "Date stockage",
+                                      "Date",
                                       "Article",
                                       "Prix d'achat",
                                       "Qté entrée",
                                       "Qté sortie",
                                       "Solde",
-                                      "Status",
                                       ""
                                     ],
                                     data: _createRows(context),
@@ -163,10 +141,29 @@ class _StockagesState extends State<Stockages> {
             color: data.solde > 0
                 ? null
                 : MaterialStateProperty.all(Colors.pink[100]),
-            onSelectChanged: (val) {
-              if (val) {
-                showStockDetails(context);
-              }
+            onSelectChanged: (val) async {
+              var db = await DbStockHelper.initDb();
+              Xloading.showLottieLoading(context);
+              await db
+                  .rawQuery(
+                      "SELECT * FROM mouvements WHERE NOT mouvt_state = 'deleted' AND mouvt_stock_id=${data.stockId}")
+                  .then((result) {
+                Xloading.dismiss();
+                var mouvements = <MouvementStock>[];
+                result
+                    .forEach((v) => mouvements.add(MouvementStock.fromMap(v)));
+                if (val) {
+                  if (mouvements.isEmpty) {
+                    XDialog.showMessage(
+                      context,
+                      message: "Aucun mouvement pour ce stock!",
+                      type: "warning",
+                    );
+                    return;
+                  }
+                  showStockDetails(context, mouvts: mouvements, stock: data);
+                }
+              });
             },
             cells: [
               DataCell(
@@ -222,41 +219,16 @@ class _StockagesState extends State<Stockages> {
                 ),
               ),
               DataCell(
-                Container(
-                  padding: const EdgeInsets.all(5.0),
-                  decoration: BoxDecoration(
-                    color:
-                        (data.solde > 0) ? Colors.green[200] : Colors.pink[100],
-                    borderRadius: BorderRadius.circular(3.0),
-                  ),
-                  child: Text(
-                    data.solde > 0 ? "actif" : "inactif",
-                    style: GoogleFonts.didactGothic(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 10.0,
-                      color: (data.solde > 0)
-                          ? Colors.green[700]
-                          : Colors.pink[800],
-                    ),
-                  ),
-                ),
-              ),
-              DataCell(
                 Row(
                   mainAxisAlignment: MainAxisAlignment.start,
                   children: [
-                    TextButton.icon(
+                    TextButton(
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.blue,
                         elevation: 2,
                         padding: const EdgeInsets.all(8.0),
                       ),
-                      icon: const Icon(
-                        Icons.add,
-                        size: 12.0,
-                        color: Colors.white,
-                      ),
-                      label: Text(
+                      child: Text(
                         "Entrer",
                         style: GoogleFonts.didactGothic(
                           fontWeight: FontWeight.w600,
@@ -281,18 +253,13 @@ class _StockagesState extends State<Stockages> {
                     const SizedBox(
                       width: 5,
                     ),
-                    TextButton.icon(
+                    TextButton(
                       style: TextButton.styleFrom(
                         backgroundColor: Colors.pink,
                         elevation: 2,
                         padding: const EdgeInsets.all(8.0),
                       ),
-                      icon: const Icon(
-                        Icons.remove,
-                        size: 12.0,
-                        color: Colors.white,
-                      ),
-                      label: Text(
+                      child: Text(
                         "Sortir",
                         style: GoogleFonts.didactGothic(
                           fontWeight: FontWeight.w600,
@@ -309,6 +276,25 @@ class _StockagesState extends State<Stockages> {
                         }, a: data.article, s: data, color: Colors.pink);
                       },
                     ),
+                    const SizedBox(
+                      width: 5,
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        elevation: 2,
+                        padding: const EdgeInsets.all(8.0),
+                      ),
+                      child: Text(
+                        "Supprimer",
+                        style: GoogleFonts.didactGothic(
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 12.0,
+                        ),
+                      ),
+                      onPressed: () => deleteStock(data.stockArticleId),
+                    ),
                   ],
                 ),
               )
@@ -316,5 +302,26 @@ class _StockagesState extends State<Stockages> {
           ),
         )
         .toList();
+  }
+
+  void deleteStock(int id) async {
+    var db = await DbStockHelper.initDb();
+    XDialog.show(context,
+        message: "Etes-vous sûr de vouloir supprimer définitivement ce stock ?",
+        onValidated: () {
+      db
+          .update("articles", {"article_state": "deleted"},
+              where: "article_id=?", whereArgs: [id])
+          .then((resId) async {
+        stockController.reloadData();
+        db
+            .update("stocks", {"stock_state": "deleted"},
+                where: "stock_article_id=?", whereArgs: [resId])
+            .then((stockId) async {
+          await db.update("mouvements", {"mouvt_state": "deleted"},
+              where: "mouvt_stock_id=?", whereArgs: [stockId]);
+        });
+      });
+    }, onFailed: () {});
   }
 }

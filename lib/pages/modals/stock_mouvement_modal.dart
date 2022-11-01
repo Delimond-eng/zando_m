@@ -156,14 +156,25 @@ showStokMouvementModal(BuildContext context, String title,
                       ),
                       ElevatedButton(
                         onPressed: () async {
+                          if (!_textQte.text.isNum) {
+                            EasyLoading.showToast(
+                                "veuillez saisir une quantité en chiffre !");
+                            return;
+                          }
+
                           /* check empty fields */
                           if (_textQte.text.isEmpty) {
                             EasyLoading.showToast(
-                                "Quantité stock entré requise !");
+                                "Quantité stock entrée requise !");
                             return;
                           }
                           var db = await DbStockHelper.initDb();
                           if (isEn) {
+                            if (!_textPrix.text.isNum) {
+                              EasyLoading.showToast(
+                                  "veuillez saisir le prix d'achat en chiffre !");
+                              return;
+                            }
                             if ((_selectedCurrency == s.stockPrixAchatDevise) &&
                                 (double.parse(s.stockPrixAchat.toString()) ==
                                     double.parse(_textPrix.text))) {
@@ -220,8 +231,9 @@ showStokMouvementModal(BuildContext context, String title,
                               mouvtTimestamp: _dateMouvt,
                               mouvtStockId: s.stockId,
                             );
-                            int last = int.parse(s.stockEn.toString());
+                            int last = s.solde;
                             int n = int.parse(_textQte.text);
+
                             if (n > last) {
                               EasyLoading.showToast("stock insuffisant !");
                               return;

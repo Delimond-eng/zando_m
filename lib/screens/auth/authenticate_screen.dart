@@ -235,6 +235,8 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
                 await SyncStock.syncIn();
                 await dataController.syncData();
               }
+            } else {
+              authController.isSyncIn.value = false;
             }
           });
         } else {
