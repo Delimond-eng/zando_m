@@ -293,7 +293,8 @@ class _StockagesState extends State<Stockages> {
                           fontSize: 12.0,
                         ),
                       ),
-                      onPressed: () => deleteStock(data.stockArticleId),
+                      onPressed: () =>
+                          deleteStock(int.parse(data.stockId.toString())),
                     ),
                   ],
                 ),
@@ -305,23 +306,19 @@ class _StockagesState extends State<Stockages> {
   }
 
   void deleteStock(int id) async {
+    print(id);
     var db = await DbStockHelper.initDb();
     XDialog.show(context,
         message: "Etes-vous sûr de vouloir supprimer définitivement ce stock ?",
-        onValidated: () {
-      db
-          .update("articles", {"article_state": "deleted"},
-              where: "article_id=?", whereArgs: [id])
-          .then((resId) async {
-        stockController.reloadData();
-        db
-            .update("stocks", {"stock_state": "deleted"},
-                where: "stock_article_id=?", whereArgs: [resId])
-            .then((stockId) async {
-          await db.update("mouvements", {"mouvt_state": "deleted"},
-              where: "mouvt_stock_id=?", whereArgs: [stockId]);
-        });
+        onValidated: () async {
+      await db
+          .update("stocks", {"stock_state": "deleted"},
+              where: "stock_id=?", whereArgs: [id])
+          .then((stockId) {
+        db.update("mouvements", {"mouvt_state": "deleted"},
+            where: "mouvt_stock_id=?", whereArgs: [stockId]);
       });
+      await stockController.reloadData();
     }, onFailed: () {});
   }
 }

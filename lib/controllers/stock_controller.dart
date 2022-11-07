@@ -17,10 +17,10 @@ class StockController extends GetxController {
     var query;
     if (seachWord == null) {
       query = await db.rawQuery(
-          "SELECT SUM(mouvements.mouvt_qte_en) AS entrees,SUM(mouvements.mouvt_qte_so) AS sorties, * FROM stocks INNER JOIN articles ON stocks.stock_article_id = articles.article_id INNER JOIN mouvements ON stocks.stock_id = mouvements.mouvt_stock_id WHERE NOT stocks.stock_state = 'deleted' AND NOT mouvements.mouvt_state='deleted' AND NOT articles.article_state = 'deleted' GROUP BY stocks.stock_id, stocks.stock_create_At ORDER BY mouvements.mouvt_create_At DESC");
+          "SELECT SUM(mouvements.mouvt_qte_en) AS entrees,SUM(mouvements.mouvt_qte_so) AS sorties, * FROM stocks INNER JOIN articles ON stocks.stock_article_id = articles.article_id INNER JOIN mouvements ON stocks.stock_id = mouvements.mouvt_stock_id WHERE NOT stocks.stock_state = 'deleted' AND NOT mouvements.mouvt_state='deleted' AND NOT articles.article_state = 'deleted' GROUP BY stocks.stock_id ORDER BY mouvements.mouvt_create_At DESC");
     } else {
       query = await db.rawQuery(
-          "SELECT SUM(mouvements.mouvt_qte_en) AS entrees,SUM(mouvements.mouvt_qte_so) AS sorties, * FROM stocks INNER JOIN articles ON stocks.stock_article_id = articles.article_id INNER JOIN mouvements ON stocks.stock_id = mouvements.mouvt_stock_id WHERE NOT stocks.stock_state = 'deleted' AND NOT mouvements.mouvt_state='deleted' AND NOT articles.article_state = 'deleted' AND articles.article_libelle LIKE '%$seachWord%' GROUP BY stocks.stock_id,stocks.stock_create_At ORDER BY mouvements.mouvt_create_At DESC");
+          "SELECT SUM(mouvements.mouvt_qte_en) AS entrees,SUM(mouvements.mouvt_qte_so) AS sorties, * FROM stocks INNER JOIN articles ON stocks.stock_article_id = articles.article_id INNER JOIN mouvements ON stocks.stock_id = mouvements.mouvt_stock_id WHERE NOT stocks.stock_state = 'deleted' AND NOT mouvements.mouvt_state='deleted' AND NOT articles.article_state = 'deleted' AND articles.article_libelle LIKE '%$seachWord%' GROUP BY stocks.stock_id ORDER BY mouvements.mouvt_create_At DESC");
     }
     stocks.clear();
     var s = <Stock>[];

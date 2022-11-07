@@ -13,45 +13,26 @@ class SyncStock {
 
     if (stocks.isNotEmpty) {
       for (var e in stocks) {
-        var isEmpty = await checkIn("stocks",
-            id: "stock_id", value: e["stock_id"].toString());
-
-        if (isEmpty) {
-          Firestore.instance.collection('stocks').add(e);
-        } else if (e["stock_state"] == "deleted") {
-          Firestore.instance
-              .collection('stocks')
-              .document(e["stock_id"].toString())
-              .update(e);
-        }
+        Firestore.instance
+            .collection('stocks')
+            .document(e["stock_id"].toString())
+            .set(e);
       }
     }
     if (mouvts.isNotEmpty) {
       for (var e in mouvts) {
-        var isEmpty = await checkIn("mouvements",
-            id: "mouvt_id", value: e["mouvt_id"].toString());
-        if (isEmpty) {
-          Firestore.instance.collection('mouvements').add(e);
-        } else if (e["mouvt_state"] == "deleted") {
-          Firestore.instance
-              .collection('mouvements')
-              .document(e["mouvt_id"].toString())
-              .update(e);
-        }
+        Firestore.instance
+            .collection('mouvements')
+            .document(e["mouvt_id"].toString())
+            .set(e);
       }
     }
     if (articles.isNotEmpty) {
       for (var e in articles) {
-        var isEmpty = await checkIn("articles",
-            id: "article_id", value: e["article_id"].toString());
-        if (isEmpty) {
-          Firestore.instance.collection('articles').add(e);
-        } else if (e["article_state"] == "deleted") {
-          Firestore.instance
-              .collection('articles')
-              .document(e["article_id"].toString())
-              .update(e);
-        }
+        Firestore.instance
+            .collection('articles')
+            .document(e["article_id"].toString())
+            .set(e);
       }
     }
     authController.isSyncIn.value = false;
@@ -69,10 +50,12 @@ class SyncStock {
           .then((result) async {
         final batch = db.batch();
         for (var e in result) {
-          var s = await db.query("mouvements",
-              where: "mouvt_id=?", whereArgs: [e["mouvt_id"]]);
+          var id = int.parse(e["mouvt_id"].toString());
+          var state = e["mouvt_state"];
+          var s = await db
+              .query("mouvements", where: "mouvt_id=?", whereArgs: [id]);
           if (s.isEmpty) {
-            if (!e["mouvt_state"].toString().contains("deleted")) {
+            if (state != "deleted") {
               batch.insert("mouvements", e.map);
             }
           }
@@ -87,10 +70,12 @@ class SyncStock {
           .then((result) async {
         final batch = db.batch();
         for (var e in result) {
-          var s = await db.query("articles",
-              where: "article_id=?", whereArgs: [e["article_id"]]);
+          var id = int.parse(e["article_id"].toString());
+          var state = e["article_state"];
+          var s = await db
+              .query("articles", where: "article_id=?", whereArgs: [id]);
           if (s.isEmpty) {
-            if (!e["article_state"].toString().contains("deleted")) {
+            if (state != "deleted") {
               batch.insert("articles", e.map);
             }
           }
@@ -102,10 +87,12 @@ class SyncStock {
       await Firestore.instance.collection("stocks").get().then((result) async {
         final batch = db.batch();
         for (var e in result) {
-          var s = await db
-              .query("stocks", where: "stock_id=?", whereArgs: [e["stock_id"]]);
+          var state = e["stock_state"];
+          var id = int.parse(e["stock_id"].toString());
+          var s =
+              await db.query("stocks", where: "stock_id=?", whereArgs: [id]);
           if (s.isEmpty) {
-            if (!e["stock_state"].toString().contains("deleted")) {
+            if (state != "deleted") {
               batch.insert("stocks", e.map);
             }
           }
