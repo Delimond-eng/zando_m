@@ -16,7 +16,8 @@ class SyncStock {
         Firestore.instance
             .collection('stocks')
             .document(e["stock_id"].toString())
-            .set(e);
+            .set(e)
+            .catchError((err) => print("error1"));
       }
     }
     if (mouvts.isNotEmpty) {
@@ -24,7 +25,8 @@ class SyncStock {
         Firestore.instance
             .collection('mouvements')
             .document(e["mouvt_id"].toString())
-            .set(e);
+            .set(e)
+            .catchError((err) => print("error2"));
       }
     }
     if (articles.isNotEmpty) {
@@ -32,7 +34,8 @@ class SyncStock {
         Firestore.instance
             .collection('articles')
             .document(e["article_id"].toString())
-            .set(e);
+            .set(e)
+            .catchError((err) => print("error3"));
       }
     }
     authController.isSyncIn.value = false;
@@ -57,6 +60,13 @@ class SyncStock {
           if (s.isEmpty) {
             if (state != "deleted") {
               batch.insert("mouvements", e.map);
+            } else {
+              batch.update(
+                "mouvements",
+                e.map,
+                where: "mouvt_id=?",
+                whereArgs: [id],
+              );
             }
           }
         }
@@ -94,12 +104,20 @@ class SyncStock {
           if (s.isEmpty) {
             if (state != "deleted") {
               batch.insert("stocks", e.map);
+            } else {
+              batch.update(
+                "stocks",
+                e.map,
+                where: "stock_id=?",
+                whereArgs: [id],
+              );
             }
           }
         }
         await batch.commit();
       });
     } catch (e) {}
+
     await stockController.reloadData();
     authController.isSyncIn.value = false;
     return "end";
