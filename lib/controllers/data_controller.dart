@@ -369,6 +369,10 @@ class DataController extends GetxController {
     final batch = db.batch();
     authController.isSyncIn.value = true;
     var syncDatas = await Synchroniser.outPutData();
+    if (syncDatas == null) {
+      authController.isSyncIn.value = false;
+      return "end";
+    }
     try {
       if (syncDatas.users.isNotEmpty) {
         for (var user in syncDatas.users) {

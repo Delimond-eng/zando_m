@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:zando_m/repositories/stock_repo/sync.dart';
 
 import '../../global/controllers.dart';
 import '../../global/data_crypt.dart';
@@ -17,6 +16,7 @@ import '../../utilities/modals.dart';
 import '../../widgets/app_logo.dart';
 import '../../widgets/auth_field.dart';
 import '../home_screen.dart';
+import '../../global/data_sync_in_out.dart' as sync;
 
 class AuthenticateScreen extends StatefulWidget {
   const AuthenticateScreen({Key key}) : super(key: key);
@@ -226,18 +226,7 @@ class _AuthenticateScreenState extends State<AuthenticateScreen> {
               MaterialPageRoute(builder: (context) => const HomeScreen()),
               (route) => false,
             );
-            var result = await (Connectivity().checkConnectivity());
-            if (result == ConnectivityResult.mobile ||
-                result == ConnectivityResult.wifi) {
-              if (!authController.checkUser) {
-                await SyncStock.syncIn();
-              } else {
-                await SyncStock.syncIn();
-                await dataController.syncData();
-              }
-            } else {
-              authController.isSyncIn.value = false;
-            }
+            sync.startSync();
           });
         } else {
           EasyLoading.showToast(
