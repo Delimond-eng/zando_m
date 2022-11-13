@@ -1,4 +1,5 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:zando_m/repositories/facturation_repo/sync_in.dart';
 
 import '../repositories/stock_repo/sync.dart';
 import 'controllers.dart';
@@ -14,9 +15,9 @@ void startSync() async {
       if (authController.loggedUser.value.userRole == "admin") {
         await SyncStock.syncOut().then((value) => SyncStock.syncIn()
             .then((value) => authController.isSyncIn.value = false));
-        await dataController.syncData();
+        await FacturationRepo.syncData();
       } else {
-        await dataController.syncData();
+        await FacturationRepo.syncData();
       }
     }
   } else {
